@@ -27,7 +27,7 @@ class Genome:
         ('max_speed',            0, apply_weight_or_default,    (1,      3.4)),
         ('lifespan',             0, apply_weight_or_default,    (0.1,    0.3)),
         ('brain_computation',    2, apply_weights_with_flag,    ((1, 0.1, 1),))
-    ] * 10  # 속성 반복 (확장용)
+    ]  # 속성 반복 (확장용)
 
     def __init__(self, genome_bytes: bytes):
         self.genome = genome_bytes  # 유전자 시퀀스 (바이트열)
