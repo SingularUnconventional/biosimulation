@@ -4,7 +4,7 @@ import sys, os
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from src.utils.math_utils import apply_weight_or_default, apply_weight_and_pad, apply_weights_with_flag
+from src.utils.math_utils import apply_weight_or_default, apply_weight_or_default_int, list_apply_weight, list_apply_weight_and_pad, apply_weights_with_flag
 
     
 class Genome:
@@ -14,20 +14,33 @@ class Genome:
     # 1 - 리스트 값 (누적 또는 추가)
     # 2 - 중첩 리스트 값 (복잡한 구조 표현)
     GENE_DEFINITIONS = [
-        ('asexual_reproduction', 0, apply_weight_or_default,    (1,      2)),
-        ('edible_food_type',     0, apply_weight_or_default,    (1,      2)),
-        ('size',                 0, apply_weight_or_default,    (0.1,   14)),
-        ('base_metabolism',      0, apply_weight_or_default,    (0.01,   6)),
-        ('stamina',              1, apply_weight_and_pad,       (0.3,    1,  4)),
-        ('attack_power',         0, apply_weight_or_default,    (0.1,    7)),
-        ('contact_attack_power', 0, apply_weight_or_default,    (1,      6.3)),
-        ('sensory_complexity',   0, apply_weight_or_default,    (0.4,    5)),
-        ('cry_complexity',       0, apply_weight_or_default,    (0.5,    1)),
-        ('brain_structure',      1, apply_weight_and_pad,       (0.5,   18, 7)),
-        ('max_speed',            0, apply_weight_or_default,    (1,      3.4)),
-        ('lifespan',             0, apply_weight_or_default,    (0.1,    0.3)),
-        ('brain_computation',    2, apply_weights_with_flag,    ((1, 0.1, 1),))
-    ]  # 속성 반복 (확장용)
+        ('size',                        0, apply_weight_or_default,    (0.01,       0.1,100000, 0.01)),
+        ('limb_length_factor',          0, apply_weight_or_default,    (0.02,       1,       5, 0.1)),
+        ('muscle_density',              0, apply_weight_or_default,    (0.02,       1,       5, 0.1)),
+        ('skin_thickness',              0, apply_weight_or_default,    (0.01,       1,      50, 0.01)),
+        ('attack_organ_power',          0, apply_weight_or_default,    (0.4,        1,     100)),
+        ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),
+        ('food_intake_rates',           1, list_apply_weight_and_pad,  (0.01,       1,   10000, 5)),
+        ('digestive_efficiency',        0, apply_weight_or_default,    (0.005,      0.5,     1, 0.1)),
+
+        ('visual_resolution',           0, apply_weight_or_default_int,(0.02,       0,       4)),
+        ('auditory_range',              0, apply_weight_or_default_int,(0.025,      0,      10)),
+        ('visible_entities',            0, apply_weight_or_default,    (1,          0,     500)),
+        ('can_locate_closest_food',     0, apply_weight_or_default_int,(0.005,      0,       1)),
+
+        ('brain_synapses',              2, apply_weights_with_flag,   ((1,          0.1,     1), 
+                                                                       (1000000,   10, 1000000), 
+                                                                       (0,         -5,       0))),
+
+        ('brain_compute_cycles',        0, apply_weight_or_default,    (1,          1,    1000)),
+        
+        ('mutation_intensity',          0, apply_weight_or_default,    (0.005,      0.5,     1)),
+        ('reproductive_mode',           0, apply_weight_or_default_int,(0.005,      0,       1)),
+        ('calls',                       1, list_apply_weight,          (1,        100,  100000)),
+        ('species_color_rgb',           1, list_apply_weight_and_pad,  (1,        100,     255, 3)),
+        ('offspring_energy_share',      0, apply_weight_or_default,    (0.0025,     0.3,     0.5)),
+        ('offspring_count',             0, apply_weight_or_default_int,(0.1,        2,    1000, 1)),
+    ] *20 # 속성 반복 (확장용)
 
     def __init__(self, genome_bytes: bytes):
         self.genome = genome_bytes  # 유전자 시퀀스 (바이트열)
@@ -158,7 +171,7 @@ if __name__ == "__main__":
     
     GENOME_NUMBER = 200
     # 무작위 유전자 생성
-    genomes = [Genome(np.random.randint(0, 256, 100, dtype=np.uint8).tobytes()) for _ in range(GENOME_NUMBER)]
+    genomes = [Genome(np.random.randint(0, 256, 1000, dtype=np.uint8).tobytes()) for _ in range(GENOME_NUMBER)]
     print("Parsed Genome:", genomes[0].genome, "\nattributes:", genomes[0].final_attributes)
 
     count = 0
@@ -171,7 +184,7 @@ if __name__ == "__main__":
         genomes = [Genome(genomes[i].crossover(genomes[i-np.random.randint(1, 10)])) for i in range(GENOME_NUMBER)]
 
         for genome in genomes:
-            for segment in genome.attributes['brain_computation']: 
+            for segment in genome.attributes['brain_synapses']: 
                 if len(segment) >= 3:
                     if (segment[0] == 1 and segment[2] == 3) or (segment [0] == 3 and segment[2] == 1): 
                         searching = False
