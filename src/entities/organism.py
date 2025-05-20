@@ -55,7 +55,7 @@ class Creature:
 
             food = self.world.foods[foodNum]
 
-            if foodLength < 1:
+            if foodLength < self.traits.speed:
                 self.energy += food.energy
                 del self.world.foods[foodNum]
             

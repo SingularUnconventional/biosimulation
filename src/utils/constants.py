@@ -1,16 +1,13 @@
 #프로젝트 전반에서 사용하는 상수를 정의
 
-WORLD_WIDTH_SCALE   = 40
-WORLD_HIGHT_SCALE   = 40
+WORLD_WIDTH_SCALE   = 400
+WORLD_HIGHT_SCALE   = 400
 
-CREATURES_SIZE		= 10
-CREATURE_MAX_HP		= 200
-CREATURE_MAX_ENERGY	= 200
-CREATURE_MAX_SPEED	= 3
-CREATURE_BMR_ENERGY	= 3
+CREATURES_SIZE		= 5
 
-FOODS_SIZE			= 1000
-FOOD_START_ENERGY	= 0.01
+START_FOODS_SIZE	= 100
+FOODS_SIZE      	= 1
+FOOD_START_ENERGY	= 0.001
 
 SUBSTANCE_A_ENERGY	= 0.0
 
@@ -18,7 +15,7 @@ SUBSTANCE_A_ENERGY	= 0.0
 # ======== 개체 상수 ========
 
 # 대사량
-BASAL_METABOLIC_CONSTANT        = 0.01 							# 기초 대사량 계수
+BASAL_METABOLIC_CONSTANT        = 0.0001						# 기초 대사량 계수
 BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (Kleiber's law 기반)
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
@@ -33,8 +30,8 @@ VISIBLE_ENTITY_ENERGY_COST      = 0.02		# 감지 가능한 생물 수당 비용
 FOOD_LOCATION_ENERGY_COST       = 0.05		# 음식 위치 감지 여부에 따른 비용
 
 # 신체활동
-LIMB_LENGTH_ENERGY_COST         = 0.05		# 팔다리 길이에 따른 비용
-MUSCLE_DENSITY_ENERGY_COST      = 0.08	    # 근밀도에 따른 비용
+LIMB_LENGTH_ENERGY_COST         = 0.1		# 팔다리 길이에 따른 비용
+MUSCLE_DENSITY_ENERGY_COST      = 0.1	    # 근밀도에 따른 비용
 SKIN_THICKNESS_ENERGY_COST      = 0.015	    # 피부 두께에 따른 비용
 ATTACK_ORGAN_ENERGY_COST        = 0.015	    # 공격 기관 파괴력에 따른 비용
 
