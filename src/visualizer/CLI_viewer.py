@@ -1,9 +1,10 @@
 from src.core.engine        import World
 from src.utils.constants    import *
-
+from dataclasses import asdict
 class Viewer:
 	def __init__(self, world : World):
 		self.world = world
+		self.count = 0
 		self.texture = {
 			"background": "  ",
 			"block" 	: "⬜️",
@@ -14,6 +15,15 @@ class Viewer:
 		self.creatureColorExpression = len(self.texture["creature"])-1
 
 	def step(self):
+		import os
+		os.system('clear')
+		print('Trun:', self.count, '\tsize:', len(self.world.creatures), '\tgeneS:', len(self.world.creatures[0].genome.genome_bytes))
+		for name, trait in asdict(self.world.creatures[0].traits).items():
+			print('%-25s' % name, trait)
+		print('%-25s' % 'energy', self.world.creatures[0].energy)
+		#input()
+		self.count +=1
+	def _step(self):
 		print(self._printworld())
 		print(self.texture["background"]*(WORLD_WIDTH_SCALE+2), end='\r')
 		commend = input()

@@ -3,22 +3,22 @@
 WORLD_WIDTH_SCALE   = 40
 WORLD_HIGHT_SCALE   = 40
 
-CREATURES_SIZE		= 50
+CREATURES_SIZE		= 10
 CREATURE_MAX_HP		= 200
 CREATURE_MAX_ENERGY	= 200
 CREATURE_MAX_SPEED	= 3
 CREATURE_BMR_ENERGY	= 3
 
-FOODS_SIZE			= 30
-FOOD_START_ENERGY	= 30
+FOODS_SIZE			= 1000
+FOOD_START_ENERGY	= 0.01
 
-SUBSTANCE_A_ENERGY	= 1
+SUBSTANCE_A_ENERGY	= 0.0
 
 
 # ======== 개체 상수 ========
 
 # 대사량
-BASAL_METABOLIC_CONSTANT        = 50.0							# 기초 대사량 계수
+BASAL_METABOLIC_CONSTANT        = 0.01 							# 기초 대사량 계수
 BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (Kleiber's law 기반)
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
