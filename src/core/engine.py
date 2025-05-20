@@ -16,11 +16,11 @@ class World:
 			creature = Creature(Vector2(
 							np.random.uniform(WORLD_WIDTH_SCALE), 
 							np.random.uniform(WORLD_HIGHT_SCALE)
-							), np.random.randint(0, 256, 150, dtype=np.uint8).tobytes(), self, 1)
+							), np.random.randint(0, 256, 150, dtype=np.uint8).tobytes(), self, 0.1)
 			
 			self.creatures.append(creature)
 		
-		for _ in range(FOODS_SIZE):
+		for _ in range(START_FOODS_SIZE):
 			self.foods.append(self.Food())
 			
 	def Trun(self):
@@ -28,6 +28,6 @@ class World:
 			creature.move()
 
 		
-		self.foods += [self.Food() for _ in range(100)]
+		self.foods += [self.Food() for _ in range(FOODS_SIZE)]
 
 		self.creatures = [creature for creature in self.creatures if creature.alive]
