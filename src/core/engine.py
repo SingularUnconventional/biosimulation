@@ -1,4 +1,4 @@
-from src.utils.datatypes    import Vector2
+from src.utils.datatypes    import Vector2, Traits, Genes
 from src.utils.constants    import *
 
 import numpy as np
@@ -7,6 +7,8 @@ class World:
 	def __init__(self):
 		from src.entities.organism  import Creature, Food_
 
+		self.Food = Food_
+
 		self.creatures: list[Creature]= []
 		self.foods 	: list[Food_] 	= []
 
@@ -14,18 +16,18 @@ class World:
 			creature = Creature(Vector2(
 							np.random.uniform(WORLD_WIDTH_SCALE), 
 							np.random.uniform(WORLD_HIGHT_SCALE)
-							), self)
+							), np.random.randint(0, 256, 150, dtype=np.uint8).tobytes(), self, 1)
 			
 			self.creatures.append(creature)
 		
 		for _ in range(FOODS_SIZE):
-			food = Food_()
-			food.regenerate()
-
-			self.foods.append(food)
+			self.foods.append(self.Food())
 			
 	def Trun(self):
 		for creature in self.creatures:
 			creature.move()
+
+		
+		self.foods += [self.Food() for _ in range(100)]
 
 		self.creatures = [creature for creature in self.creatures if creature.alive]

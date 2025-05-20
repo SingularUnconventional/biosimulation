@@ -1,12 +1,12 @@
-import numpy as np
-
 import sys, os
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from src.utils.math_utils import apply_weight_or_default, apply_weight_or_default_int, list_apply_weight, list_apply_weight_and_pad, apply_weights_with_flag
-
+from src.utils.datatypes    import Genes
+from src.utils.math_utils   import apply_weight_or_default, apply_weight_or_default_int, list_apply_weight, list_apply_weight_and_pad, apply_weights_with_flag
     
+import numpy as np
+
 class Genome:
     # 속성 정의: (속성명, 데이터 형식, 가중치)
     # 데이터 형식:
@@ -14,7 +14,7 @@ class Genome:
     # 1 - 리스트 값 (누적 또는 추가)
     # 2 - 중첩 리스트 값 (복잡한 구조 표현)
     GENE_DEFINITIONS = [
-        ('size',                        0, apply_weight_or_default,    (0.01,       0.1,100000, 0.01)),
+        ('size',                        0, apply_weight_or_default,    (0.01,       1,  100000, 0.01)),
         ('limb_length_factor',          0, apply_weight_or_default,    (0.02,       1,       5, 0.1)),
         ('muscle_density',              0, apply_weight_or_default,    (0.02,       1,       5, 0.1)),
         ('skin_thickness',              0, apply_weight_or_default,    (0.01,       1,      50, 0.01)),
@@ -40,28 +40,28 @@ class Genome:
         ('species_color_rgb',           1, list_apply_weight_and_pad,  (1,        100,     255, 3)),
         ('offspring_energy_share',      0, apply_weight_or_default,    (0.0025,     0.3,     0.5)),
         ('offspring_count',             0, apply_weight_or_default_int,(0.1,        2,    1000, 1)),
-    ] *20 # 속성 반복 (확장용)
+    ]# *20 # 속성 반복 (확장용)
 
-    def __init__(self, genome_bytes: bytes):
-        self.genome = genome_bytes  # 유전자 시퀀스 (바이트열)
+    def __init__(self, genome_bytes_bytes: bytes):
+        self.genome_bytes = genome_bytes_bytes  # 유전자 시퀀스 (바이트열)
         # 속성 초기화: 형식에 따라 0 또는 빈 리스트
-        self.attributes = {name: 0 if fmt == 0 else [] for name, fmt, _,_ in self.GENE_DEFINITIONS}
-        self.final_attributes = {}
+        self.attributes = {name : 0 if fmt == 0 else [] for name, fmt, _,_ in self.GENE_DEFINITIONS}
+        self.traits = None
         # 초기 선택 속성
         self.current_attr_index, self.data_format, _,_ = self.GENE_DEFINITIONS[0]
-        self.parse_genome()
+        self.parse_genome_bytes()
         self.finalize_attributes()
 
     def finalize_attributes(self):
         """최종적인 속성 정규화"""
-        self.final_attributes = {
-            name: genome_function(self.attributes[name],*index) 
-            for name, _, genome_function, index in self.GENE_DEFINITIONS
-            }
+        self.traits = Genes(*(
+            genome_bytes_function(self.attributes[name],*index) 
+            for name, _, genome_bytes_function, index in self.GENE_DEFINITIONS
+        ))
 
-    def parse_genome(self):
+    def parse_genome_bytes(self):
         """유전자 바이트열을 속성으로 변환"""
-        for byte in self.genome:
+        for byte in self.genome_bytes:
             is_command = (byte >> 7) & 0b1       # 최상위 1비트: 명령 여부
             data = byte & 0b01111111             # 나머지 7비트: 데이터 값
 
@@ -73,7 +73,7 @@ class Genome:
     def _set_current_attribute(self, index):
         """속성 전환 명령 처리"""
         if index >= len(self.GENE_DEFINITIONS):
-            return  # 유효하지 않은 인덱스 무시
+            index %= len(self.GENE_DEFINITIONS)
         self.current_attr_index, self.data_format, _,_ = self.GENE_DEFINITIONS[index]
         attr = self.attributes[self.current_attr_index]
 
@@ -105,18 +105,18 @@ class Genome:
                 attr.append([])
             attr[-1].append(data)
 
-    def crossover(self, partner_genome: 'Genome', num_cuts: int = 3) -> 'Genome':
+    def crossover(self, partner_genome_bytes: bytes, mutation_rate, num_cuts: int = 3) -> bytes:
         """다중 절단 교차 방식으로 자식 유전자 생성 (길이 패딩 없이)
 
         Args:
-            partner_genome (Genome): 교차할 대상 Genome
+            partner_genome_bytes (Genome): 교차할 대상 Genome
             num_cuts (int): 절단 지점 개수
 
         Returns:
             Genome: 교차된 자식 Genome 객체
         """
-        parent1 = list(self.genome)
-        parent2 = list(partner_genome.genome)
+        parent1 = list(self.genome_bytes)
+        parent2 = list(partner_genome_bytes)
         min_len = min(len(parent1), len(parent2))
 
         # 절단 지점 생성
@@ -138,9 +138,9 @@ class Genome:
         # 남은 바이트 붙이기 (랜덤한 부모 선택)
         child.extend(parent1[min_len:])
 
-        return self._apply_mutation(child)
+        return self._apply_mutation(child, mutation_rate)
 
-    def _apply_mutation(self, gene_sequence, mutation_rate=0.01):
+    def _apply_mutation(self, gene_sequence, mutation_rate):
         """유전자에 확률적으로 돌연변이 적용하여 새 바이트열 반환"""
         i = 0
         while i < len(gene_sequence):
@@ -171,8 +171,8 @@ if __name__ == "__main__":
     
     GENOME_NUMBER = 200
     # 무작위 유전자 생성
-    genomes = [Genome(np.random.randint(0, 256, 1000, dtype=np.uint8).tobytes()) for _ in range(GENOME_NUMBER)]
-    print("Parsed Genome:", genomes[0].genome, "\nattributes:", genomes[0].final_attributes)
+    genome_bytess = [Genome(np.random.randint(0, 256, 1000, dtype=np.uint8).tobytes()) for _ in range(GENOME_NUMBER)]
+    print("Parsed Genome:", genome_bytess[0].genome_bytes, "\nattributes:", genome_bytess[0].traits)
 
     count = 0
     
@@ -181,17 +181,17 @@ if __name__ == "__main__":
     
     while searching:
         # 돌연변이 유전자 생성
-        genomes = [Genome(genomes[i].crossover(genomes[i-np.random.randint(1, 10)])) for i in range(GENOME_NUMBER)]
+        genome_bytess = [Genome(genome_bytess[i].crossover(genome_bytess[i-np.random.randint(1, 10)])) for i in range(GENOME_NUMBER)]
 
-        for genome in genomes:
-            for segment in genome.attributes['brain_synapses']: 
+        for genome_bytes in genome_bytess:
+            for segment in genome_bytes.attributes['brain_synapses']: 
                 if len(segment) >= 3:
                     if (segment[0] == 1 and segment[2] == 3) or (segment [0] == 3 and segment[2] == 1): 
                         searching = False
-                        endGenome = genome
+                        endGenome = genome_bytes
 
         count += 1
         print('count:', count, end='\r')
 
     print()
-    print("genome:", endGenome.genome, "\nattributes:", endGenome.final_attributes)
+    print("genome_bytes:", endGenome.genome_bytes, "\nattributes:", endGenome.traits)
