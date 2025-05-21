@@ -1,5 +1,8 @@
 #프로젝트 전반에서 사용하는 상수를 정의
 
+GRID_WIDTH_SCALE   = 100
+GRID_HIGHT_SCALE   = 100
+
 WORLD_WIDTH_SCALE   = 400
 WORLD_HIGHT_SCALE   = 400
 
