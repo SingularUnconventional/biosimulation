@@ -11,6 +11,9 @@ FOOD_START_ENERGY	= 0.001
 
 SUBSTANCE_A_ENERGY	= 0.0
 
+NUM_ORGANIC         = 4
+ORGANIC_GEN_RATE    = [1, 1, 0.5, 0.1]
+ORGANIC_MAX_AMOUNT  = [1000, 500, 200, 100]
 
 # ======== 개체 상수 ========
 
