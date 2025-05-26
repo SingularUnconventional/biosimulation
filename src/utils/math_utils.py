@@ -1,15 +1,21 @@
 import numpy as np
-import src.utils.datatypes as datatype
+from src.utils.constants import *
+from src.utils.datatypes import Vector2
 
 def find_closest_point_arg(points: np.array, target: np.array) -> int:
 	"""타겟 위치에서 가장 가까운 요소 반환"""
 	dists = np.sum((points - target)**2, axis=1)
 	return np.argmin(dists)
 
-def find_closest_point(points: list[datatype.Vector2], target: datatype.Vector2):
+def find_closest_point(points: list[Vector2], target: Vector2):
 	"""타겟 위치에서 가장 가까운 위치와 요소 반환"""
 	dists = np.sum((points - target)**2, axis=1)
 	return np.min(dists), np.argmin(dists)
+
+
+def get_grid_coords(position: Vector2) -> Vector2:
+    return Vector2(int(position.x // GRID_WIDTH_SCALE), int(position.y // GRID_HIGHT_SCALE))
+        
 
 
 def apply_weight_or_default(value, weight, default, max_value, min_value=0):

@@ -47,3 +47,8 @@ def generate_noise_field(
                 field[i, j, n] = noise_value
 
     return field
+
+
+if __name__ == "__main__":
+    noise_field = generate_noise_field((100, 100), 100/1, 125)
+    #print(noise_field.tolist())
