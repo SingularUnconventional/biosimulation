@@ -17,6 +17,9 @@ class Vector2:
 	def __add__(self, vector : Vector2) -> Vector2:
 		return Vector2(self.x + vector.x, self.y + vector.y)
 	
+	def __mul__(self, other):
+		return Vector2(self.x*other, self.y*other)
+	
 
 @dataclass
 class Genes:
