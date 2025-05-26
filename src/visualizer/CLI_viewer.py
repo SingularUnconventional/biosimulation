@@ -14,15 +14,41 @@ class Viewer:
 
 		self.creatureColorExpression = len(self.texture["creature"])-1
 
+		self.scNumber = 0
+		self.passcount = 0
 	def step(self):
+		self.count +=1
+		if self.count < self.passcount: 
+			print(f"{"#"*(self.passcount-self.count)/self.passcount}", self.count, end='\r')
+			return
 		import os
 		os.system('clear')
-		print('Trun:', self.count, '\tsize:', len(self.world.creatures), '\tgeneS:', len(self.world.creatures[0].genome.genome_bytes))
-		for name, trait in asdict(self.world.creatures[0].traits).items():
+		creatures = list(set().union(*[
+			set().union(*[
+				self.world.world[y][x].creatures 
+				for x in range(WORLD_WIDTH_SCALE)]) 
+				for y in range(WORLD_HIGHT_SCALE)]))
+		
+		
+		# for i, creature in enumerate(creatures):
+		# 	if creature.id == 11776:
+		# 		self.scNumber = i
+
+		print('Trun:', self.count, '\tsize:', len(creatures), '\tgeneS:', len(creatures[self.scNumber].genome.genome_bytes))
+		print('%-25s' % 'id', creatures[self.scNumber].id)
+		for name, trait in asdict(creatures[self.scNumber].traits).items():
 			print('%-25s' % name, trait)
-		print('%-25s' % 'energy', self.world.creatures[0].energy)
-		#input()
-		self.count +=1
+		print('%-25s' % 'energy', creatures[self.scNumber].energy)
+		print('%-25s' % 'Pos', f"x={creatures[self.scNumber].position.x:.3f} y={creatures[self.scNumber].position.y:.3f}")
+		print('%-25s' % 'GridPos', f"x={creatures[self.scNumber].grid.pos.x} y= {creatures[self.scNumber].grid.pos.y}")
+		# for yGrid in self.world.world:
+		# 	for Grid in yGrid:
+		# 		print(f"{Grid.organics.current_amounts[0]:.0f}", end=' ')
+		# 	print()
+		commend = input()
+		if commend:
+			self.passcount = int(commend)
+
 	def _step(self):
 		print(self._printworld())
 		print(self.texture["background"]*(WORLD_WIDTH_SCALE+2), end='\r')
