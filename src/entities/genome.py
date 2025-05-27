@@ -14,13 +14,13 @@ class Genome:
     # 1 - 리스트 값 (누적 또는 추가)
     # 2 - 중첩 리스트 값 (복잡한 구조 표현)
     GENE_DEFINITIONS = [
-        ('size',                        0, apply_weight_or_default,    (0.01,       1,  100000, 0.01)),
+        ('size',                        0, apply_weight_or_default,    (0.01,       1,  100000, 0.1)),
         ('limb_length_factor',          0, apply_weight_or_default,    (0.02,       1,       5, 0.1)),
         ('muscle_density',              0, apply_weight_or_default,    (0.02,       1,       5, 0.1)),
         ('skin_thickness',              0, apply_weight_or_default,    (0.01,       1,      50, 0.01)),
         ('attack_organ_power',          0, apply_weight_or_default,    (0.4,        1,     100)),
         ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),
-        ('food_intake_rates',           1, list_apply_weight_and_pad,  (0.01,       0.1,   10000, 5)),
+        ('food_intake_rates',           1, list_apply_weight_and_pad,  (0.01,       0.01,10000, 5)),
         ('digestive_efficiency',        0, apply_weight_or_default,    (0.005,      0.5,     1, 0.1)),
 
         ('visual_resolution',           0, apply_weight_or_default_int,(0.02,       0,       4)),
@@ -39,7 +39,7 @@ class Genome:
         ('calls',                       1, list_apply_weight,          (1,        100,  100000)),
         ('species_color_rgb',           1, list_apply_weight_and_pad,  (1,        100,     255, 3)),
         ('offspring_energy_share',      0, apply_weight_or_default,    (0.0025,     0.3,     0.5)),
-        ('offspring_count',             0, apply_weight_or_default_int,(0.1,        2,    1000, 1)),
+        ('offspring_count',             0, apply_weight_or_default_int,(0.01,        2,     100, 1)),
     ]# *20 # 속성 반복 (확장용)
 
     def __init__(self, genome_bytes_bytes: bytes):

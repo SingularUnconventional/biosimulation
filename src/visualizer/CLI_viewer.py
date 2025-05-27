@@ -19,7 +19,7 @@ class Viewer:
 	def step(self):
 		self.count +=1
 		if self.count < self.passcount: 
-			print(f"{"#"*(self.passcount-self.count)/self.passcount}", self.count, end='\r')
+			print(f"| {self.count}/{self.passcount} | {self.count/self.passcount*100:.1f}% {"="*int(self.count/self.passcount*50)}>{"-"*int((self.passcount-self.count)/self.passcount*50)}", end='\r')
 			return
 		import os
 		os.system('clear')
@@ -47,7 +47,12 @@ class Viewer:
 		# 	print()
 		commend = input()
 		if commend:
-			self.passcount = int(commend)
+			if commend.isnumeric():
+				self.passcount = int(commend)
+			elif commend == 'save log':
+				self.world.logs.save_logs()
+			elif commend == 'exit':
+				exit()
 
 	def _step(self):
 		print(self._printworld())

@@ -25,7 +25,6 @@ class Creature:
         self.position       : Vector2   = position
         self.health         : float     = self.traits.health
         self.energy         : float     = start_energy
-        self.alive          : bool      = True
         
         self.id = Creature._id_counter  # 고유 ID 부여
         Creature._id_counter += 1       # 다음 ID 준비

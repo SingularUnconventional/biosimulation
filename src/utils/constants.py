@@ -3,8 +3,8 @@
 GRID_WIDTH_SCALE   = 30
 GRID_HIGHT_SCALE   = 30
 
-WORLD_WIDTH_SCALE   = 4
-WORLD_HIGHT_SCALE   = 4
+WORLD_WIDTH_SCALE   = 40
+WORLD_HIGHT_SCALE   = 40
 
 CREATURES_SIZE      = 1
 
@@ -15,18 +15,18 @@ FOOD_START_ENERGY	= 0.001
 SUBSTANCE_A_ENERGY	= 0.0
 
 NUM_ORGANIC         = 4
-ORGANIC_GEN_RATE    = [0.001, 0, 0, 0]
-ORGANIC_MAX_AMOUNT  = [1, 0, 0, 0]
+ORGANIC_GEN_RATE    = [0.001, 0.002, 0.003, 0.004]
+ORGANIC_MAX_AMOUNT  = [1, 2, 3, 4]
 
 # ======== 개체 상수 ========
 
 # 대사량
-BASAL_METABOLIC_CONSTANT        = 0.0001						# 기초 대사량 계수
+BASAL_METABOLIC_CONSTANT        = 0.01  						# 기초 대사량 계수
 BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (Kleiber's law 기반)
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
 DIGESTIVE_EFFICIENCY_BASELINE   = 0.5						    # 소화 효율 기준값
-FOOD_DIGESTION_COSTS            = [0.001, 0.002, 0.005, 0.008, 0.015]# 음식 종류별 대사 비용 계수
+FOOD_DIGESTION_COSTS            = [0.1, 0.2, 0.5, 0.8, 1.5]     # 음식 종류별 대사 비용 계수
 
 # 감각 / 인지
 BRAIN_ENERGY_COST               = 0.00005	# 뇌 시냅스 및 연산 비용
@@ -37,8 +37,8 @@ FOOD_LOCATION_ENERGY_COST       = 0.05		# 음식 위치 감지 여부에 따른 
 
 # 신체활동
 LIMB_LENGTH_ENERGY_COST         = 0.1		# 팔다리 길이에 따른 비용
-MUSCLE_DENSITY_ENERGY_COST      = 0.1	    # 근밀도에 따른 비용
-SKIN_THICKNESS_ENERGY_COST      = 0.015	    # 피부 두께에 따른 비용
+MUSCLE_DENSITY_ENERGY_COST      = 0.5	    # 근밀도에 따른 비용
+SKIN_THICKNESS_ENERGY_COST      = 0.1	    # 피부 두께에 따른 비용
 ATTACK_ORGAN_ENERGY_COST        = 0.015	    # 공격 기관 파괴력에 따른 비용
 
 # 체력, 공격, 속도, 수명
