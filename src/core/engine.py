@@ -1,8 +1,10 @@
+from src.data.logger        import WorldLog
 from src.entities.environment import OrganicMatterSource
 from src.utils.datatypes    import Vector2, Traits, Genes
 from src.utils.constants    import *
 from src.utils.math_utils   import get_grid_coords
 from src.utils.noise_fields import generate_noise_field
+
 import numpy as np
 
 class World:
@@ -21,6 +23,8 @@ class World:
             for xGrid in range(WORLD_WIDTH_SCALE)]
             for yGrid in range(WORLD_HIGHT_SCALE)
         ]
+        
+        self.logs = WorldLog(self.world)
 
         self.build_vision_refs(max_radius=3)  # 시야 반경 1~3까지 지원
 
@@ -46,16 +50,12 @@ class World:
                                 refs.append(neighbor.creatures)  # 참조만 저장
                     grid.vision_refs.append(refs)
 
-    def move_creature(self, creature: 'Creature', old_pos, new_pos):
-        self.world[old_pos[1]][old_pos[0]].creatures.discard(creature)
-        self.world[new_pos[1]][new_pos[0]].creatures.add(creature)
-        creature.grid = self.world[new_pos[1]][new_pos[0]]
-
     def Trun(self):
         for yGrid in self.world:
             for grid in yGrid:
                 grid.process_creatures(self)
                 grid.organics.regenerate()
+        self.logs.log_turn()
 
 class Grid:
     def __init__(self, x: int, y: int, organic_affinity: list[float]):
@@ -69,7 +69,7 @@ class Grid:
             for i in range(NUM_ORGANIC)
         ])
 
-    def process_creatures(self, world: "World"):
+    def process_creatures(self, world: World):
         spawn_queue = set()
         remove_queue = set()
 
@@ -97,3 +97,5 @@ class Grid:
         for offspring in spawn_queue:
             c = get_grid_coords(offspring.position)
             world.world[c.y][c.x].creatures.add(offspring)
+
+        world.logs.register_creature(spawn_queue)
