@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulation with Object UI (Mouse Control)</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; background: #111; }
+    #objectInfo {
+      position: absolute;
+      background: #222;
+      color: white;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-family: sans-serif;
+      font-size: 14px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+    #timebar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: #333;
+      cursor: pointer;
+    }
+    #progress {
+      height: 100%;
+      background: #4caf50;
+      width: 0%;
+    }
+    #togglePlayPause {
+      position: fixed;
+      bottom: 50px;
+      left: 20px;
+      z-index: 10;
+      padding: 8px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      background: #444;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<button id="togglePlayPause">Pause</button>
+<div id="objectInfo"></div>
+<div id="timebar"><div id="progress"></div></div>
+
+<script>
+let isPlaying = true;
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const infoBox = document.getElementById("objectInfo");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - 40;
+
+// 뷰포트/카메라 정보
+let cameraX = 0, cameraY = 0, zoom = 1;
+
+// 마우스 드래그로 패닝
+let isDragging = false;
+let lastMouse = { x: 0, y: 0 };
+
+canvas.addEventListener("mousedown", e => {
+  isDragging = true;
+  lastMouse = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener("mouseup", () => isDragging = false);
+
+canvas.addEventListener("mousemove", e => {
+  if (isDragging) {
+    const dx = (e.clientX - lastMouse.x) / zoom;
+    const dy = (e.clientY - lastMouse.y) / zoom;
+    cameraX -= dx;
+    cameraY -= dy;
+    lastMouse = { x: e.clientX, y: e.clientY };
+  }
+});
+
+// 줌 인/아웃 (마우스 위치 중심)
+canvas.addEventListener("wheel", e => {
+  const zoomFactor = 1.1;
+  const oldZoom = zoom;
+  if (e.deltaY < 0) zoom *= zoomFactor;
+  else zoom /= zoomFactor;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const wx = mx / oldZoom + cameraX;
+  const wy = my / oldZoom + cameraY;
+  cameraX = wx - mx / zoom;
+  cameraY = wy - my / zoom;
+
+  e.preventDefault();
+});
+
+// 좌표 변환
+function worldToScreen(x, y) {
+  return {
+    x: (x - cameraX) * zoom,
+    y: (y - cameraY) * zoom
+  };
+}
+function screenToWorld(x, y) {
+  return {
+    x: x / zoom + cameraX,
+    y: y / zoom + cameraY
+  };
+}
+
+// ====== 가짜 JSONL 생성 ======
+const frames = [];
+const objectCount = 30;
+const frameCount = 300;
+
+for (let t = 0; t < frameCount; t++) {
+  const objects = [];
+  for (let i = 0; i < objectCount; i++) {
+    const angle = (t + i * 20) * 0.02;
+    objects.push({
+      id: i,
+      x: Math.cos(angle) * 200 + i * 10,
+      y: Math.sin(angle) * 200 + i * 10,
+      hp: 100 - ((t + i) % 100)
+    });
+  }
+  frames.push(JSON.stringify({ time: t, objects }));
+}
+
+let currentFrame = 0;
+let parsedObjects = [];
+let selectedObject = null;
+
+// 렌더링 루프
+function update() {
+  if (isPlaying && currentFrame < frames.length) {
+    const line = frames[currentFrame];
+    const parsed = JSON.parse(line);
+    parsedObjects = parsed.objects;
+    currentFrame++;
+  }
+
+  const progress = document.getElementById("progress");
+  progress.style.width = (currentFrame / frameCount * 100).toFixed(1) + "%";
+
+  render();
+  updateInfoBox();
+  requestAnimationFrame(update);
+}
+
+// 렌더링
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const obj of parsedObjects) {
+    const { x, y } = worldToScreen(obj.x, obj.y);
+    ctx.beginPath();
+    ctx.arc(x, y, 6 * zoom, 0, Math.PI * 2);
+    ctx.fillStyle = (selectedObject && selectedObject.id === obj.id) ? "#FFD700" : "#0cf";
+    ctx.fill();
+  }
+}
+
+// 객체 클릭 처리
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  const world = screenToWorld(mouseX, mouseY);
+
+  let found = null;
+  for (const obj of parsedObjects) {
+    const dx = obj.x - world.x;
+    const dy = obj.y - world.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 10) {
+      found = obj;
+      break;
+    }
+  }
+
+  if (found) {
+    if (selectedObject && selectedObject.id === found.id) {
+      selectedObject = null;
+      infoBox.style.display = "none";
+    } else {
+      selectedObject = found;
+      infoBox.innerHTML = `<b>Object #${found.id}</b><br>HP: ${found.hp}`;
+      infoBox.style.display = "block";
+    }
+  } else {
+    selectedObject = null;
+    infoBox.style.display = "none";
+  }
+});
+
+// UI 위치 업데이트
+function updateInfoBox() {
+  if (selectedObject) {
+    const { x, y } = worldToScreen(selectedObject.x, selectedObject.y);
+    infoBox.style.left = (x + 10) + "px";
+    infoBox.style.top = (y - 10) + "px";
+  }
+}
+
+// 시간바
+const timebar = document.getElementById("timebar");
+timebar.addEventListener("mousedown", e => {
+  const rect = timebar.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  currentFrame = Math.floor(ratio * frameCount);
+});
+
+document.getElementById("togglePlayPause").addEventListener("click", () => {
+  isPlaying = !isPlaying;
+  document.getElementById("togglePlayPause").textContent = isPlaying ? "Pause" : "Play";
+});
+
+update();
+</script>
+</body>
+</html>
