@@ -47,7 +47,12 @@ class Viewer:
 		# 	print()
 		commend = input()
 		if commend:
-			self.passcount = int(commend)
+			if commend.isnumeric():
+				self.passcount = int(commend)
+			elif commend == 'save log':
+				self.world.logs.save_logs()
+			elif commend == 'exit':
+				exit()
 
 	def _step(self):
 		print(self._printworld())

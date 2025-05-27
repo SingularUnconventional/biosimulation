@@ -4,7 +4,7 @@ from src.visualizer.CLI_viewer  import Viewer
 
 import numpy as np
 class Simulator:
-    def __init__(self, seed=1000002):
+    def __init__(self, seed=1000000):
         np.random.seed(seed)
         self.world = World()
         self.viewer= Viewer(self.world)
