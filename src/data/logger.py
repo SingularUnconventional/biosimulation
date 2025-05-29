@@ -14,13 +14,14 @@ class WorldLog:
         self.raw_log_file = os.path.join(self.log_dir, "turn_logs.jsonl")
         self.static_file = os.path.join(self.log_dir, "static_data.jsonl")  # .jsonl로 변경
         self.compressed_dir = os.path.join(self.log_dir, "compressed")
+        self.index_path = os.path.join(self.compressed_dir, "index.jsonl")
         os.makedirs(self.compressed_dir, exist_ok=True)
 
         open(self.raw_log_file, "w").close()
         open(self.static_file, "w").close()
+        open(self.index_path, "w").close()
 
         self.static_creature_data = []
-        self.compress_count = 0
 
     def register_creature(self, creatures):
         """새로운 생물체의 유전자 정보를 누적"""
@@ -64,11 +65,26 @@ class WorldLog:
 
     def compress_log(self):
         """로그 파일 압축"""
-        self.compress_count += 1
-        compressed_file = os.path.join(self.compressed_dir, f"turn_logs_{self.compress_count:04d}.zst")
+        filename = f"turn_logs_{self.turn_count:08d}.zst"
+        compressed_file = os.path.join(self.compressed_dir, filename)
 
+        # 압축 수행
         cctx = zstd.ZstdCompressor(level=5)
         with open(self.raw_log_file, "rb") as in_f, open(compressed_file, "wb") as out_f:
             out_f.write(cctx.compress(in_f.read()))
 
+        # 원본 로그 초기화
         open(self.raw_log_file, "w").close()
+
+        with open(self.index_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(filename) + "\n")
+
+    def decompress_zstd_file(file_path: str) -> bytes:
+        """Zstandard 압축 파일을 해제하여 원본 바이트 데이터를 반환"""
+        try:
+            with open(file_path, 'rb') as f:
+                dctx = zstd.ZstdDecompressor()
+                return dctx.decompress(f.read())
+        except Exception as e:
+            print(f"[Decompress Error] {file_path}: {e}")
+            return b''

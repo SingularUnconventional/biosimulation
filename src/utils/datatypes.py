@@ -50,7 +50,6 @@ class Genes:
 @dataclass
 class Traits:
 	size 					: float			# 0.01 ~ 100,000.0	신체 크기 (kg)
-	food_intake_rates 		: list[float]	# 0.0 ~ 10000.0		음식 종류별 시간당 섭취량     
 	digestive_efficiency 	: float			# 0.1 ~ 1.0			섭취 에너지 변환율
 
 	visual_resolution 		: int			# 0 ~ 4				시각 해상도(커질수록 상대의 정보 자세히 파악) 
@@ -76,6 +75,7 @@ class Traits:
 	lifespan				: float
 	energy_reserve			: float
 	initial_offspring_energy: float
+	food_intake_rates 		: list[float]	# 0.0 ~ 10000.0		음식 종류별 시간당 섭취량     
 
 
 	def __init__(self, genes:Genes):
@@ -126,13 +126,15 @@ class Traits:
 			1 +
 			genes.muscle_density * ENERGY_RESERVE_MUSCLE_MULTIPLIER +
 			genes.skin_thickness * ENERGY_RESERVE_SKIN_MULTIPLIER
-		)
+		) * ENERGY_RESERVE_MULTIPLIER
 
 		# 자식에게 줄 초기 에너지 계산
 		initial_offspring_energy = energy_reserve * genes.offspring_energy_share / genes.offspring_count
 
+		# 시간당 에너지 섭취량 계산
+		food_intake_rates = [rate*genes.size for rate in genes.food_intake_rates]
+
 		self.size                      = genes.size
-		self.food_intake_rates         = genes.food_intake_rates
 		self.digestive_efficiency      = genes.digestive_efficiency
 
 		self.visual_resolution         = genes.visual_resolution
@@ -158,3 +160,4 @@ class Traits:
 		self.lifespan                  = lifespan
 		self.energy_reserve            = energy_reserve
 		self.initial_offspring_energy  = initial_offspring_energy
+		self.food_intake_rates         = food_intake_rates

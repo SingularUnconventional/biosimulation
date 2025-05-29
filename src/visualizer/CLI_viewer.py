@@ -17,12 +17,20 @@ class Viewer:
 		self.scNumber = 0
 		self.passcount = 0
 	def step(self):
-		self.count +=1
-		if self.count < self.passcount: 
-			print(f"| {self.count}/{self.passcount} | {self.count/self.passcount*100:.1f}% {"="*int(self.count/self.passcount*50)}>{"-"*int((self.passcount-self.count)/self.passcount*50)}", end='\r')
+		self.count += 1
+		if self.count < self.passcount:
+			ratio = self.count / self.passcount
+			percent = ratio * 100
+			bar_len = 50
+			passed = "=" * int(ratio * bar_len)
+			remaining = "-" * (bar_len - len(passed))
+			print(f"| {self.count}/{self.passcount} | {percent:.1f}% {passed}>{remaining}", end='\r')
 			return
 		import os
-		os.system('clear')
+		if os.name == 'nt':  # Windows
+			os.system('cls')
+		else:  # Linux, macOS 등
+			os.system('clear')
 		creatures = list(set().union(*[
 			set().union(*[
 				self.world.world[y][x].creatures 
