@@ -1,12 +1,12 @@
 #프로젝트 전반에서 사용하는 상수를 정의
 
-GRID_WIDTH_SCALE   = 30
-GRID_HIGHT_SCALE   = 30
+GRID_WIDTH_SCALE   = 300
+GRID_HIGHT_SCALE   = 300
 
-WORLD_WIDTH_SCALE   = 4
-WORLD_HIGHT_SCALE   = 4
+WORLD_WIDTH_SCALE   = 50
+WORLD_HIGHT_SCALE   = 50
 
-CREATURES_SIZE      = 1
+CREATURES_SIZE      = 100
 
 START_FOODS_SIZE	= 100
 FOODS_SIZE      	= 1
@@ -15,8 +15,8 @@ FOOD_START_ENERGY	= 0.001
 SUBSTANCE_A_ENERGY	= 0.0
 
 NUM_ORGANIC         = 4
-ORGANIC_GEN_RATE    = [0.001, 0.002, 0.003, 0.004]
-ORGANIC_MAX_AMOUNT  = [1, 2, 3, 4]
+ORGANIC_GEN_RATE    = [0.2, 0.4, 0.6, 0.8]
+ORGANIC_MAX_AMOUNT  = [500, 1000, 1500, 2000]
 
 # ======== 개체 상수 ========
 
@@ -26,7 +26,7 @@ BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (K
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
 DIGESTIVE_EFFICIENCY_BASELINE   = 0.5						    # 소화 효율 기준값
-FOOD_DIGESTION_COSTS            = [0.1, 0.2, 0.5, 0.8, 1.5]     # 음식 종류별 대사 비용 계수
+FOOD_DIGESTION_COSTS            = [80, 80, 80, 80, 80]     # 음식 종류별 대사 비용 계수
 
 # 감각 / 인지
 BRAIN_ENERGY_COST               = 0.00005	# 뇌 시냅스 및 연산 비용
@@ -53,4 +53,4 @@ LIFESPAN_SCALE                  = 20.0
 # 에너지 저장
 ENERGY_RESERVE_MUSCLE_MULTIPLIER= 0.5      # 근밀도가 에너지 저장량에 미치는 영향
 ENERGY_RESERVE_SKIN_MULTIPLIER  = 0.1      # 피부 두께가 에너지 저장량에 미치는 영향
-
+ENERGY_RESERVE_MULTIPLIER       = 10       # 전체적인 에너지 저장량

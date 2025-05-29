@@ -24,7 +24,7 @@ class Creature:
         self.grid           : Grid      = grid
         self.position       : Vector2   = position
         self.health         : float     = self.traits.health
-        self.energy         : float     = start_energy
+        self.energy         : float     = self.traits.initial_offspring_energy
         
         self.id = Creature._id_counter  # 고유 ID 부여
         Creature._id_counter += 1       # 다음 ID 준비
@@ -39,27 +39,23 @@ class Creature:
     
     def update(self) -> list["Creature"] | str | None:
         
+        self.energy -= self.traits.BMR
         for i, organic in enumerate(self.grid.organics.current_amounts):
-            if self.traits.food_intake_rates[i] and organic-self.traits.food_intake_rates[i] > 0:
+            if self.traits.food_intake_rates[i] and organic > self.traits.food_intake_rates[i] and self.energy < self.traits.energy_reserve:
                 self.energy                             += self.traits.food_intake_rates[i]
                 self.grid.organics.current_amounts[i]   -= self.traits.food_intake_rates[i]
-        self.energy -= self.traits.BMR
 
         # 죽음
         if self.energy <= 0:
             return "die"
-
-        # 이동 및 번식
-        offspring = self.move()
-        if offspring:
-            return offspring  # 자식 리스트 반환
         
-        return None
-
-    def move(self):
         if self.energy > self.traits.initial_offspring_energy*self.traits.offspring_count*2:
             return self.breed()
-        
+
+        # 이동 및 번식
+        return self.move()
+
+    def move(self):
         new_position = self._locate*self.traits.speed + self.position
     
         if (new_position.x < 0 or 
