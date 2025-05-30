@@ -18,15 +18,24 @@ let isDragging = false;
 let lastMouse = { x: 0, y: 0 };
 let isTouching = false;
 let lastTouch = [], lastDist = null;
-
+let tapStartTime = 0;
+let tapStartPos = null;
 let currentFrame = 1;
 let totalFrames = 0;
 let parsedObjects = [];
 let selectedObject = null;
 let currentFileFrames = [];
 let currentFileRange = { start: -1, end: -1 };
-let preloadCache = {};  // filename => frames[]
+let preloadCache = {};
 let preloadingFile = null;
+
+
+const MAX_CACHE_FILES = 7; // 동시에 유지할 zst 블록 수
+const cacheQueue = [];      // 순서 관리용
+
+const frameCache = {};          // filename => frames[]
+const fileLoadPromises = {};    // filename => Promise resolving to frames[]
+const PRELOAD_LOOKAHEAD = 7;    // 미리 로드할 파일 개수
 
 function worldToScreen(x, y) {
   return { x: (x - cameraX) * zoom, y: (y - cameraY) * zoom };
@@ -35,7 +44,7 @@ function screenToWorld(x, y) {
   return { x: x / zoom + cameraX, y: y / zoom + cameraY };
 }
 
-// === 마우스 및 터치 인터랙션 ===
+// === 마우스 이벤트 ===
 canvas.addEventListener("mousedown", e => {
   isDragging = true;
   lastMouse = { x: e.clientX, y: e.clientY };
@@ -63,12 +72,82 @@ canvas.addEventListener("wheel", e => {
   cameraY = wy - my / zoom;
   e.preventDefault();
 });
-
 canvas.addEventListener("click", e => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
-  const world = screenToWorld(mouseX, mouseY);
+  handleObjectSelection(mouseX, mouseY);
+});
+
+// === 터치 이벤트 ===
+canvas.addEventListener("touchstart", e => {
+  if (e.touches.length === 1) {
+    isTouching = true;
+    lastTouch = [{ x: e.touches[0].clientX, y: e.touches[0].clientY }];
+    tapStartTime = Date.now();
+    tapStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    lastDist = null;
+  } else if (e.touches.length === 2) {
+    lastTouch = [
+      { x: e.touches[0].clientX, y: e.touches[0].clientY },
+      { x: e.touches[1].clientX, y: e.touches[1].clientY }
+    ];
+    lastDist = Math.hypot(
+      lastTouch[0].x - lastTouch[1].x,
+      lastTouch[0].y - lastTouch[1].y
+    );
+  }
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("touchmove", e => {
+  if (e.touches.length === 1 && isTouching) {
+    const dx = (e.touches[0].clientX - lastTouch[0].x) / zoom;
+    const dy = (e.touches[0].clientY - lastTouch[0].y) / zoom;
+    cameraX -= dx;
+    cameraY -= dy;
+    lastTouch = [{ x: e.touches[0].clientX, y: e.touches[0].clientY }];
+  } else if (e.touches.length === 2) {
+    const touch0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    const touch1 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+    const dist = Math.hypot(touch0.x - touch1.x, touch0.y - touch1.y);
+    if (lastDist) {
+      const scale = dist / lastDist;
+      const midX = (touch0.x + touch1.x) / 2;
+      const midY = (touch0.y + touch1.y) / 2;
+      const wx = midX / zoom + cameraX;
+      const wy = midY / zoom + cameraY;
+      zoom *= scale;
+      cameraX = wx - midX / zoom;
+      cameraY = wy - midY / zoom;
+    }
+    lastTouch = [touch0, touch1];
+    lastDist = dist;
+  }
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("touchend", e => {
+  isTouching = false;
+  if (e.changedTouches.length === 1 && tapStartPos) {
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - tapStartPos.x;
+    const dy = touch.clientY - tapStartPos.y;
+    const duration = Date.now() - tapStartTime;
+    if (Math.hypot(dx, dy) < 10 && duration < 300) {
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      handleObjectSelection(x, y);
+    }
+  }
+  lastTouch = [];
+  lastDist = null;
+});
+
+// === 생물 선택 공통 함수 ===
+function handleObjectSelection(screenX, screenY) {
+  const world = screenToWorld(screenX, screenY);
   let found = null;
   for (const obj of parsedObjects) {
     const dx = obj.x - world.x;
@@ -80,7 +159,7 @@ canvas.addEventListener("click", e => {
   }
   selectedObject = (selectedObject && selectedObject.id === found?.id) ? null : found;
   updateInfoBox();
-});
+}
 
 function updateInfoBox() {
   const sidebar = document.getElementById("sidebar");
@@ -127,30 +206,60 @@ function findFileForFrame(frame) {
   return { filename, start, end };
 }
 
+function fetchAndParseFile(filename) {
+  return fetch(`${LOG_DIR}${filename}`)
+    .then(res => res.arrayBuffer())
+    .then(buffer => {
+      const decoded = new TextDecoder("utf-8").decode(buffer);
+      const lines = decoded.trim().split("\n");
+      if (lines.length === 0) throw new Error(`빈 로그 파일: ${filename}`);
+      return lines;
+    });
+}
+
+function cacheFile(filename, frames) {
+  frameCache[filename] = frames;
+  cacheQueue.push(filename);
+
+  // 초과 시 가장 오래된 항목 제거
+  if (cacheQueue.length > MAX_CACHE_FILES) {
+    const oldest = cacheQueue.shift();
+    delete frameCache[oldest];
+    delete fileLoadPromises[oldest]; // (optional)
+  }
+}
+
 async function loadCompressedFile(filename) {
-  if (preloadCache[filename]) {
-    currentFileFrames = preloadCache[filename];
-    delete preloadCache[filename];
+  if (frameCache[filename]) {
+    currentFileFrames = frameCache[filename];
     return;
   }
 
-  const res = await fetch(`${LOG_DIR}${filename}`);
-  const text = await res.text();
+  if (!fileLoadPromises[filename]) {
+    // 직접 재생 시 로드되지 않았다면 직접 시작
+    fileLoadPromises[filename] = fetchAndParseFile(filename)
+    .then(frames => { frameCache[filename] = frames; return frames; })
+    .catch(e => {
+      console.error(`❗ 파일 로딩 실패: ${filename}`, e);
+      delete fileLoadPromises[filename];
+      throw e;
+    });
+  }
 
-  if (!text.trim()) throw new Error(`압축 해제된 로그가 비어있습니다: ${filename}`);
-  currentFileFrames = text.trim().split("\n");
-  if (currentFileFrames.length === 0) throw new Error(`프레임 파싱 실패: ${filename}`);
+  currentFileFrames = await fileLoadPromises[filename];
 }
 
-async function preloadNextFile(filename) {
-  preloadingFile = filename;
-  try {
-    const res = await fetch(`${LOG_DIR}${filename}`);
-    const text = await res.text();
-    const frames = text.trim().split("\n");
-    if (frames.length > 0) preloadCache[filename] = frames;
-  } catch (e) {
-    console.warn(`❗️프리로드 실패: ${filename}`, e);
+function preloadNextFiles(currentFrame) {
+  for (let i = 1; i <= PRELOAD_LOOKAHEAD; i++) {
+    const { filename } = findFileForFrame(currentFrame + i * FRAMES_PER_FILE);
+    if (!fileLoadPromises[filename]) {
+      fileLoadPromises[filename] = fetchAndParseFile(filename)
+        .then(frames => { frameCache[filename] = frames; return frames; })
+        .catch(e => {
+          console.warn(`❗ 프리로드 실패: ${filename}`, e);
+          delete fileLoadPromises[filename];
+        });
+    }
   }
 }
 
@@ -177,25 +286,28 @@ async function update() {
       return;
     }
 
-    let parsed;
     try {
-      parsed = JSON.parse(frameData);
+      parsedObjects = extractCreaturesFromTurn(JSON.parse(frameData));
     } catch (e) {
       console.error("JSON 파싱 실패:", e, frameData);
       isPlaying = false;
       return;
     }
 
-    parsedObjects = extractCreaturesFromTurn(parsed);
     currentFrame++;
-
-    const nextRange = findFileForFrame(currentFileRange.end + 1);
-    if (!preloadingFile || preloadingFile !== nextRange.filename) {
-      preloadNextFile(nextRange.filename);
-    }
+    preloadNextFiles(currentFrame);  // 항상 다음 프레임들 미리 요청
   }
 
+  // 기존 재생 위치 바 (빨간색)
   document.getElementById("progress").style.width = (currentFrame / totalFrames * 100) + "%";
+
+  // 새로 추가된 버퍼링 바 (회색)
+  let maxBufferedFrame = currentFrame;
+  for (const filename in frameCache) {
+    const { start, end } = findFileForFrame(Number(filename.match(/\d+/)[0]));
+    if (end > maxBufferedFrame) maxBufferedFrame = end;
+  }
+  document.getElementById("buffered").style.width = (maxBufferedFrame / totalFrames * 100) + "%";
   render();
   updateInfoBox();
   requestAnimationFrame(update);
@@ -289,6 +401,11 @@ document.getElementById("togglePlayPause").addEventListener("click", () => {
   isPlaying = !isPlaying;
   document.getElementById("togglePlayPause").textContent = isPlaying ? "Pause" : "Play";
 });
+
+function debug(text) {  
+  const el = document.getElementById("debug");  
+  if (el) el.innerText = typeof text === 'object' ? JSON.stringify(text, null, 2) : text;  
+}  
 
 async function start() {
   await detectTotalFrames();

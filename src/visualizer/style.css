@@ -25,20 +25,24 @@ body {
 }
 
 #timebar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 40px;
-  background: #333;
-  cursor: pointer;
-  z-index: 5;
+  height: 20px;
+  background: #222;
 }
-
-#progress {
+#buffered {
+  position: absolute;
   height: 100%;
-  background: #6cf;
+  background: #555; /* 버퍼링 색 */
   width: 0%;
+  z-index: 0;
+}
+#progress {
+  position: absolute;
+  height: 100%;
+  background: goldenrod;
+  width: 0%;
+  z-index: 1;
 }
 
 #togglePlayPause {
