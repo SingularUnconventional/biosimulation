@@ -6,10 +6,20 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="debug"></div>
   <canvas id="canvas"></canvas>
   <div id="sidebar"></div>
   <button id="togglePlayPause">Pause</button>
-  <div id="timebar"><div id="progress"></div></div>
+  <div id="timebar">
+    <div id="buffered"></div>   <!-- 프리로드된 범위 표시용 -->
+    <div id="progress"></div>   <!-- 현재 재생 위치 표시용 -->
+  </div>
+  <!-- head 태그나 body 상단에 추가 -->
+  <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+  <script>
+    // vConsole 인스턴스 생성
+    new window.VConsole();
+  </script>
 
   <script type="module" src="script.js"></script>
 </body>
