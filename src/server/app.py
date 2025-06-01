@@ -1,72 +1,58 @@
 from flask import Flask, send_file, send_from_directory, abort, Response
-import os
+from pathlib import Path
 import zstandard as zstd
-import gzip
-import io
 
 app = Flask(__name__)
 
-# 경로 설정
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-TEST_DIR = os.path.join(PROJECT_ROOT, 'src/visualizer')
-LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
-LOGS_COMPRESSED_DIR = os.path.join(LOGS_DIR, 'compressed')
+# === 경로 설정 ===
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+VISUALIZER_DIR = PROJECT_ROOT / 'src' / 'visualizer'
+LOGS_DIR = PROJECT_ROOT / 'logs'
+LOGS_COMPRESSED_DIR = LOGS_DIR / 'compressed'
 
-# index.html 반환
+# === 유틸 함수 ===
+def abort_with_log(status_code, message):
+    print(message)
+    abort(status_code, description=message)
+
+def serve_file_safe(path: Path, mimetype=None):
+    if not path.is_file():
+        abort_with_log(404, f"파일을 찾을 수 없습니다: {path}")
+    return send_file(str(path), mimetype=mimetype)
+
+# === 라우터 ===
 @app.route('/')
-def serve_index():
-    try:
-        return send_file(os.path.join(TEST_DIR, 'index.html'))
-    except Exception as e:
-        print("Error serving index.html:", e)
-        abort(500)
+def index():
+    return serve_file_safe(VISUALIZER_DIR / 'index.html')
 
-# test 폴더의 정적 파일 제공 (style.css, script.js 등)
 @app.route('/<path:filename>')
-def serve_static_file(filename):
-    try:
-        return send_from_directory(TEST_DIR, filename)
-    except Exception as e:
-        print(f"Error serving file '{filename}':", e)
-        abort(500)
+def static_files(filename):
+    return serve_file_safe(VISUALIZER_DIR / filename)
 
-# logs/compressed/zst 파일 요청 시 GZIP 압축 응답
 @app.route('/logs/compressed/<path:filename>')
-def serve_compressed(filename):
-    file_path = os.path.join(LOGS_COMPRESSED_DIR, filename)
+def compressed_logs(filename):
+    file_path = LOGS_COMPRESSED_DIR / filename
 
-    # ✅ 일반 파일 (예: index.jsonl)은 압축 해제 없이 그대로 제공
     if filename.endswith('.jsonl'):
-        if not os.path.isfile(file_path):
-            abort(404)
-        return send_from_directory(LOGS_COMPRESSED_DIR, filename)
+        return serve_file_safe(file_path)
 
-    # ✅ .zst 파일은 해제 후 GZIP 압축 전송
-    if filename.endswith('.zst'):
-        if not os.path.isfile(file_path):
-            abort(404, description="압축 로그 파일이 존재하지 않습니다.")
-
+    elif filename.endswith('.zst'):
+        if not file_path.is_file():
+            abort_with_log(404, f"압축 로그 파일이 존재하지 않습니다: {file_path}")
         try:
             with open(file_path, 'rb') as f:
                 dctx = zstd.ZstdDecompressor()
                 decompressed = dctx.decompress(f.read())
-
             return Response(decompressed, content_type='application/json')
-
         except Exception as e:
-            print(f"압축 해제 실패: {e}")
-            abort(500, description="Zstandard → GZIP 변환 실패")
+            abort_with_log(500, f"압축 해제 실패: {e}")
 
-    abort(400, description="지원하지 않는 파일 유형입니다.")
+    abort_with_log(400, f"지원하지 않는 파일 유형입니다: {filename}")
 
-# logs 폴더의 그 외 정적 파일 제공
 @app.route('/logs/<path:filename>')
-def serve_logs(filename):
-    try:
-        return send_from_directory(LOGS_DIR, filename)
-    except Exception as e:
-        print(f"Error serving logs file '{filename}':", e)
-        abort(500)
+def raw_logs(filename):
+    return serve_file_safe(LOGS_DIR / filename)
 
+# === 실행 ===
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -38,21 +38,30 @@ class WorldLog:
                     f.write(json.dumps(genome_str) + "\n")
             self.static_creature_data.clear()
 
+    def fast_round(self, v, scale=10000):
+        return int(v * scale) / scale
+
     def log_turn(self):
-        """매 턴마다 로그를 기록"""
-        turn_log = {
-            "turn": self.turn_count,
-            "grids": [[{
-                "pos": asdict(grid.pos),
-                "organics": grid.organics.current_amounts,
-                "creatures": [{
-                    "id": creature.id,
-                    "position": asdict(creature.position),
-                    "health": creature.health,
-                    "energy": creature.energy
-                } for creature in grid.creatures]
-            } for grid in row] for row in self.grid_array]
-        }
+        """매 턴마다 로그를 기록 (리스트 기반 구조)"""
+        turn_log = [
+            self.turn_count,  # turn number
+            [  # grids
+                [  # each row
+                    [  # each grid: [organics, creatures]
+                        [self.fast_round(v) for v in grid.organics.current_amounts],  # [float]
+                        [  # creatures
+                            [  # each creature: [id, x, y, health, energy]
+                                creature.id,
+                                self.fast_round(creature.position.x),
+                                self.fast_round(creature.position.y),
+                                self.fast_round(creature.health),
+                                self.fast_round(creature.energy)
+                            ] for creature in grid.creatures
+                        ]
+                    ] for grid in row
+                ] for row in self.grid_array
+            ]
+        ]
 
         with open(self.raw_log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(turn_log, separators=(",", ":")) + "\n")
