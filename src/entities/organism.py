@@ -1,4 +1,8 @@
-from src.core.engine        import World, Grid
+# creature.py
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.core.engine import World, Grid
+
 from src.entities.genome    import Genome
 from src.utils.constants    import *
 from src.utils.datatypes    import Color, Vector2, Genes, Traits
@@ -13,18 +17,19 @@ class Creature:
     def __init__(self, 
                  position       : Vector2, 
                  genome_bytes   : bytes, 
-                 world          : World,
-                 grid           : Grid,
+                 world          : 'World',
+                 grid           : 'Grid',
                  start_energy   : float,
                  ):
         self.genome = Genome(genome_bytes)
         self.traits = Traits(self.genome.traits)
 
-        self.world          : World     = world
-        self.grid           : Grid      = grid
+        self.world          : 'World'   = world
+        self.grid           : 'Grid'    = grid
         self.position       : Vector2   = position
         self.health         : float     = self.traits.health
         self.energy         : float     = self.traits.initial_offspring_energy
+        self.life_start_time: int       = world.time
         
         self.id = Creature._id_counter  # 고유 ID 부여
         Creature._id_counter += 1       # 다음 ID 준비
@@ -40,13 +45,23 @@ class Creature:
     def update(self) -> list["Creature"] | str | None:
         
         self.energy -= self.traits.BMR
-        for i, organic in enumerate(self.grid.organics.current_amounts):
-            if self.traits.food_intake_rates[i] and organic > self.traits.food_intake_rates[i] and self.energy < self.traits.energy_reserve:
-                self.energy                             += self.traits.food_intake_rates[i]
-                self.grid.organics.current_amounts[i]   -= self.traits.food_intake_rates[i]
+        if self.traits.food_intake == 0: #태양에너지.
+            if (self.grid.organics[self.traits.food_intake] > self.traits.intake_rates 
+            and self.energy < self.traits.energy_reserve):
+                self.energy     += self.traits.actual_intake * self.world.solar_conversion_bonus
+                self.grid.organics[self.traits.food_intake]  -= self.traits.intake_rates * self.world.solar_conversion_bonus
+        elif self.traits.food_intake == 4: #사체 섭취
+            ...
+        else:
+            if (self.grid.organics[self.traits.food_intake] > self.traits.intake_rates 
+            and self.energy < self.traits.energy_reserve):
+                self.energy     += self.traits.actual_intake
+                self.grid.organics[self.traits.food_intake] -= self.traits.intake_rates
+
+        
 
         # 죽음
-        if self.energy <= 0:
+        if self.energy <= self.traits.energy_reserve*0.3 or self.life_start_time+self.traits.lifespan < self.world.time:
             return "die"
         
         if self.energy > self.traits.initial_offspring_energy*self.traits.offspring_count*2:
@@ -95,15 +110,19 @@ class Creature:
                 self.grid,
                 self.traits.initial_offspring_energy) for _ in range(self.traits.offspring_count)]
         
-#임시
-class Food_:
-    def __init__(self):
-        self.position    : Vector2
-        self.energy      : int = FOOD_START_ENERGY
+#음식 -> 시체 개편.
+class Corpse:
+    def __init__(self, grid, position, energy):
+        self.grid       : 'Grid'    = grid
+        self.position    : Vector2  = position
+        self.energy      : float    = energy
 
-        self.regenerate()
+    def decay(self):
+        for i in range(NUM_ORGANIC):
+            self.grid.organics[i] += DECAY_RETURN_ENERGY[i]
+            self.energy -= DECAY_RETURN_ENERGY[i]
 
-    def regenerate(self):
-        self.position = Vector2(
-                        np.random.uniform(WORLD_WIDTH_SCALE), 
-                        np.random.uniform(WORLD_HIGHT_SCALE))
+        if self.energy < 0:
+            return "die"
+        else:
+            return None

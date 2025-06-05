@@ -12,7 +12,8 @@ class WorldLog:
 
         self.log_dir = log_dir
         self.raw_log_file = os.path.join(self.log_dir, "turn_logs.jsonl")
-        self.static_file = os.path.join(self.log_dir, "static_data.jsonl")  # .jsonl로 변경
+        self.static_file = os.path.join(self.log_dir, "static_data.jsonl")
+        self.offsets_file = os.path.join(self.log_dir, "offsets.bin")
         self.compressed_dir = os.path.join(self.log_dir, "compressed")
         self.index_path = os.path.join(self.compressed_dir, "index.jsonl")
         os.makedirs(self.compressed_dir, exist_ok=True)
@@ -20,6 +21,7 @@ class WorldLog:
         open(self.raw_log_file, "w").close()
         open(self.static_file, "w").close()
         open(self.index_path, "w").close()
+        open(self.offsets_file, "wb").close()
 
         self.static_creature_data = []
 
@@ -31,11 +33,19 @@ class WorldLog:
         ])
 
     def write_static_data(self):
-        """누적된 유전자 정보를 파일에 append한 뒤 리스트 초기화"""
+        """누적된 유전자 정보를 static_data.jsonl에 append하고, offsets.bin에도 오프셋 기록"""
         if self.static_creature_data:
-            with open(self.static_file, "a", encoding="utf-8") as f:
+            with open(self.static_file, "a", encoding="utf-8") as f_data, \
+                open(self.offsets_file, "ab") as f_offset:
+
                 for genome_str in self.static_creature_data:
-                    f.write(json.dumps(genome_str) + "\n")
+                    # 현재 오프셋 저장 (byte 위치)
+                    offset = f_data.tell()
+                    f_offset.write(offset.to_bytes(8, byteorder="little"))
+
+                    # 유전자 데이터 한 줄로 기록
+                    f_data.write(json.dumps(genome_str) + "\n")
+
             self.static_creature_data.clear()
 
     def fast_round(self, v, scale=10000):
@@ -48,7 +58,7 @@ class WorldLog:
             [  # grids
                 [  # each row
                     [  # each grid: [organics, creatures]
-                        [self.fast_round(v) for v in grid.organics.current_amounts],  # [float]
+                        [self.fast_round(v) for v in grid.organics],  # [float]
                         [  # creatures
                             [  # each creature: [id, x, y, health, energy]
                                 creature.id,
@@ -57,6 +67,13 @@ class WorldLog:
                                 self.fast_round(creature.health),
                                 self.fast_round(creature.energy)
                             ] for creature in grid.creatures
+                        ],
+                        [   #corpses
+                            [  # each creature: [x, y, energy]
+                                self.fast_round(corpse.position.x),
+                                self.fast_round(corpse.position.y),
+                                self.fast_round(corpse.energy)
+                            ] for corpse in grid.corpses
                         ]
                     ] for grid in row
                 ] for row in self.grid_array
@@ -97,3 +114,5 @@ class WorldLog:
         except Exception as e:
             print(f"[Decompress Error] {file_path}: {e}")
             return b''
+        
+        
