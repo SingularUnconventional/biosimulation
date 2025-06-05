@@ -2,6 +2,11 @@ from src.utils.constants import *
 
 from dataclasses import dataclass
 
+#바이러스 특징
+#높은 에너지 효율
+#높은 번식력
+#태양 에너지를 기반으로 한 무한한 에너지 공급
+
 @dataclass
 class Color:
 	r : int #0-255
@@ -29,7 +34,8 @@ class Genes:
 	skin_thickness 			: float			# 0.01 ~ 50.0		피부 두께 
 	attack_organ_power 		: float			# 0.0 ~ 100.0		공격 기관의 파괴력 
 	retaliation_damage_ratio: float			# 0.0 ~ 5.0			반격 피해 비율 
-	food_intake_rates 		: list[float]	# 0.0 ~ 10000.0		음식 종류별 시간당 섭취량     
+	food_intake 			: int			# 0 ~ 4				섭취 가능 음식  
+	intake_rates 			: float			# 0.0 ~ 10000.0		시간당 음식 섭취량
 	digestive_efficiency 	: float			# 0.1 ~ 1.0			섭취 에너지 변환율 
 
 	visual_resolution 		: int			# 0 ~ 4				시각 해상도(커질수록 상대의 정보 자세히 파악) 
@@ -49,33 +55,35 @@ class Genes:
 
 @dataclass
 class Traits:
-	size 					: float			# 0.01 ~ 100,000.0	신체 크기 (kg)
-	digestive_efficiency 	: float			# 0.1 ~ 1.0			섭취 에너지 변환율
+	size 					: float			= None # 0.01 ~ 100,000.0	신체 크기 (kg)
+	food_intake				: int			= None # 0 ~ 4				섭취 가능 음식
+	digestive_efficiency 	: float			= None # 0.1 ~ 1.0			섭취 에너지 변환율
 
-	visual_resolution 		: int			# 0 ~ 4				시각 해상도(커질수록 상대의 정보 자세히 파악) 
-	auditory_range 			: int			# 0 ~ 10			청각 감지 반경 (grid) 
-	visible_entities 		: int			# 0 ~ 500			감지 가능한 생물 수 
-	can_locate_closest_food : bool			# 0/1				가장 가까운 음식 인지 여부
+	visual_resolution 		: int			= None # 0 ~ 4				시각 해상도(커질수록 상대의 정보 자세히 파악) 
+	auditory_range 			: int			= None # 0 ~ 10				청각 감지 반경 (grid) 
+	visible_entities 		: int			= None # 0 ~ 500			감지 가능한 생물 수 
+	can_locate_closest_food : bool			= None # 0/1				가장 가까운 음식 인지 여부
 
-	brain_synapses 			: list[list]	# 					뇌 시냅스 리스트 
-	brain_compute_cycles 	: int			# 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
+	brain_synapses 			: list[list]	= None # 					뇌 시냅스 리스트 
+	brain_compute_cycles 	: int			= None # 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
 	
-	mutation_intensity 		: float			# 0.0 ~ 1.0			돌연변이 강도 
-	reproductive_mode 		: bool			# 					생식 방식 (0: 무성, 1: 유성)
-	calls 					: list[int]		# 					울음소리 리스트
-	species_color_rgb 		: list[int]		# 					종 유사도 표현 색상 (r, g, b)
-	offspring_count 		: int			# 1 ~ 100			한 번에 낳는 자식 수 
+	mutation_intensity 		: float			= None # 0.0 ~ 1.0			돌연변이 강도 
+	reproductive_mode 		: bool			= None # 					생식 방식 (0: 무성, 1: 유성)
+	calls 					: list[int]		= None # 					울음소리 리스트
+	species_color_rgb 		: list[int]		= None # 					종 유사도 표현 색상 (r, g, b)
+	offspring_count 		: int			= None # 1 ~ 100			한 번에 낳는 자식 수 
 
-	BMR						: float
-	health					: float
-	attack_power			: float
-	attack_cost				: float
-	retaliation_damage		: float
-	speed					: float
-	lifespan				: float
-	energy_reserve			: float
-	initial_offspring_energy: float
-	food_intake_rates 		: list[float]	# 0.0 ~ 10000.0		음식 종류별 시간당 섭취량     
+	BMR						: float			= None
+	health					: float			= None
+	attack_power			: float			= None
+	attack_cost				: float			= None
+	retaliation_damage		: float			= None
+	speed					: float			= None
+	lifespan				: float			= None
+	energy_reserve			: float			= None
+	initial_offspring_energy: float			= None
+	intake_rates 			: float			= None	# 0.0 ~ 10000.0		시간당 음식 섭취량     
+	actual_intake			: float			= None
 
 
 	def __init__(self, genes:Genes):
@@ -94,9 +102,7 @@ class Traits:
 		skin_bonus      = genes.skin_thickness        * SKIN_THICKNESS_ENERGY_COST
 		attack_bonus    = genes.attack_organ_power    * ATTACK_ORGAN_ENERGY_COST
 
-		food_intake_penalty = sum(
-			rate * FOOD_DIGESTION_COSTS[i] for i, rate in enumerate(genes.food_intake_rates)
-		)
+		food_intake_penalty = genes.intake_rates * FOOD_DIGESTION_COSTS[genes.food_intake]
 
 		total_bmr_multiplier = BASE_MULTIPLIER + (
 			digestive_bonus + brain_bonus + visual_bonus + auditory_bonus +
@@ -132,10 +138,15 @@ class Traits:
 		initial_offspring_energy = energy_reserve * genes.offspring_energy_share / genes.offspring_count
 
 		# 시간당 에너지 섭취량 계산
-		food_intake_rates = [rate*genes.size for rate in genes.food_intake_rates]
+		intake_rates = genes.intake_rates * genes.size * ENERGY_INTAKE_RATES[genes.food_intake]
+
+		#실제 에너지 섭취량
+		actual_intake = intake_rates * genes.digestive_efficiency
+		
 
 		self.size                      = genes.size
 		self.digestive_efficiency      = genes.digestive_efficiency
+		self.food_intake			   = genes.food_intake
 
 		self.visual_resolution         = genes.visual_resolution
 		self.auditory_range            = genes.auditory_range
@@ -160,4 +171,5 @@ class Traits:
 		self.lifespan                  = lifespan
 		self.energy_reserve            = energy_reserve
 		self.initial_offspring_energy  = initial_offspring_energy
-		self.food_intake_rates         = food_intake_rates
+		self.intake_rates			   = intake_rates
+		self.actual_intake			   = actual_intake

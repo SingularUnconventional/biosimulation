@@ -1,6 +1,21 @@
-from flask import Flask, send_file, send_from_directory, abort, Response
+import sys
+import os
+
+# 현재 파일 기준으로 상위 폴더 경로 계산
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(parent_dir)
+
+
+from src.entities.genome import Genome
+from src.utils.datatypes import Traits
+
+from flask import Flask, jsonify, send_file, send_from_directory, abort, Response
 from pathlib import Path
+from dataclasses import asdict
 import zstandard as zstd
+import json
+import base64
+
 
 app = Flask(__name__)
 
@@ -9,6 +24,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 VISUALIZER_DIR = PROJECT_ROOT / 'src' / 'visualizer'
 LOGS_DIR = PROJECT_ROOT / 'logs'
 LOGS_COMPRESSED_DIR = LOGS_DIR / 'compressed'
+GENETIC_DATA_PATH = LOGS_DIR / "static_data.jsonl"
+OFFSET_INDEX_PATH = LOGS_DIR / "offsets.bin"
+
 
 # === 유틸 함수 ===
 def abort_with_log(status_code, message):
@@ -19,6 +37,15 @@ def serve_file_safe(path: Path, mimetype=None):
     if not path.is_file():
         abort_with_log(404, f"파일을 찾을 수 없습니다: {path}")
     return send_file(str(path), mimetype=mimetype)
+
+def load_offset_index():
+    try:
+        with open(OFFSET_INDEX_PATH, "rb") as f:
+            data = f.read()
+            return [int.from_bytes(data[i:i+8], "little") for i in range(0, len(data), 8)]
+    except FileNotFoundError:
+        print("❌ offsets.bin 파일이 존재하지 않습니다.")
+        return []
 
 # === 라우터 ===
 @app.route('/')
@@ -49,10 +76,26 @@ def compressed_logs(filename):
 
     abort_with_log(400, f"지원하지 않는 파일 유형입니다: {filename}")
 
+@app.route('/logs/<int:object_id>')
+def serve_gene(object_id):
+    if object_id >= len(offset_index):
+        abort_with_log(404, f"ID {object_id}에 해당하는 유전자 정보가 존재하지 않습니다.")
+    try:
+        offset = offset_index[object_id]
+        with open(GENETIC_DATA_PATH, "rb") as f:
+            f.seek(offset)
+            line = f.readline().decode("utf-8").strip()
+            raw_bytes = base64.b64decode(line)
+            interpreted = asdict(Traits(Genome(raw_bytes).traits))
+            return jsonify(interpreted)
+    except Exception as e:
+        abort_with_log(500, f"유전자 처리 중 오류 발생: {e}")
+
 @app.route('/logs/<path:filename>')
 def raw_logs(filename):
     return serve_file_safe(LOGS_DIR / filename)
 
 # === 실행 ===
 if __name__ == '__main__':
+    offset_index = load_offset_index()
     app.run(debug=True, port=5000)

@@ -1,4 +1,5 @@
 from src.data.logger        import WorldLog
+from src.entities.organism  import Corpse, Creature
 from src.entities.environment import OrganicMatterSource
 from src.utils.datatypes    import Vector2, Traits, Genes
 from src.utils.constants    import *
@@ -10,7 +11,9 @@ import numpy as np
 class World:
     
     def __init__(self):
-        from src.entities.organism import Creature
+        self.time = 0
+
+        self.solar_conversion_bonus = 10
 
         organics_noise = generate_noise_field(
             shape=(WORLD_WIDTH_SCALE, WORLD_HIGHT_SCALE),
@@ -54,35 +57,40 @@ class World:
         for yGrid in self.world:
             for grid in yGrid:
                 grid.process_creatures(self)
-                grid.organics.regenerate()
+                #grid.organics.regenerate()
         self.logs.log_turn()
+        self.time += 1
 
 class Grid:
     def __init__(self, x: int, y: int, organic_affinity: list[float]):
         self.pos = Vector2(x, y)
         self.creatures = set()
+        self.corpses = set()
         self.vision_refs = []  # 시야 반경별 참조 리스트 초기화
 
-        self.organics = OrganicMatterSource([
-            ((organic_affinity[i] + 1) * 0.5 * ORGANIC_GEN_RATE[i],
-             (organic_affinity[i] + 1) * 0.5 * ORGANIC_MAX_AMOUNT[i])
-            for i in range(NUM_ORGANIC)
-        ])
+        self.organics = [((organic_affinity[i] + 1) * 0.5 * START_ORGANIC_RATE) for i in range(NUM_ORGANIC)]
+        # self.organics = OrganicMatterSource([
+        #     ((organic_affinity[i] + 1) * 0.5 * ORGANIC_GEN_RATE[i],
+        #      (organic_affinity[i] + 1) * 0.5 * ORGANIC_MAX_AMOUNT[i])
+        #     for i in range(NUM_ORGANIC)
+        # ])
 
     def process_creatures(self, world: World):
-        spawn_queue = set()
-        remove_queue = set()
+        creature_spawn_queue = set()
+        creature_remove_queue = set()
+        corpse_remove_queue = set()
 
         for creature in list(self.creatures):  # 안전한 복사 반복
             result = creature.update()
 
             # 죽음
             if result == "die":
-                remove_queue.add(creature)
+                self.corpses.add(Corpse(self, creature.position, creature.energy))
+                creature_remove_queue.add(creature)
 
             # 번식
             elif isinstance(result, list):  # 여러 자식 Creature 반환
-                spawn_queue.update(result)
+                creature_spawn_queue.update(result)
 
             # 이동
             elif result == "move":
@@ -91,11 +99,21 @@ class Grid:
                 world.world[new_grid.y][new_grid.x].creatures.add(creature)
                 creature.grid = world.world[new_grid.y][new_grid.x]  # 업데이트 필수
 
-        for creature in remove_queue:
+        for corpse in list(self.corpses):
+            result = corpse.decay()
+
+            if result and result == "die":
+                corpse_remove_queue.add(corpse)
+
+        for creature in creature_remove_queue:
             self.creatures.discard(creature)
 
-        for offspring in spawn_queue:
+        
+        for corpse in corpse_remove_queue:
+            self.corpses.discard(corpse)
+
+        for offspring in creature_spawn_queue:
             c = get_grid_coords(offspring.position)
             world.world[c.y][c.x].creatures.add(offspring)
 
-        world.logs.register_creature(spawn_queue)
+        world.logs.register_creature(creature_spawn_queue)

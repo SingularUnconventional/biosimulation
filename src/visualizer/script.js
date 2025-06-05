@@ -6,12 +6,14 @@ canvas.height = window.innerHeight - 40;
 
 const CONFIG = {
   GRID_SIZE: 400,
-  ORGANIC_ENERGY_SCALE: 2500.0,
-  CREATURE_RADIUS: 4,
+  ORGANIC_ENERGY_SCALE: 400.0,
+  CREATURE_RADIUS: 16,
   FRAMES_PER_FILE: 100,
   LOG_DIR: "/logs/compressed/",
-  MAX_CACHE_FILES: 8,
-  PRELOAD_LOOKAHEAD: 7,
+  MAX_CACHE_FILES: 4,
+  PRELOAD_LOOKAHEAD: 3,
+  GENE_FETCH_ZOOM_THRESHOLD: 0.1,
+  GENE_CACHE_LIMIT: 10000,
 };
 
 const state = {
@@ -26,12 +28,17 @@ const state = {
   visibleGridRange: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
   visibleGrids: [],
   visibleCreatures: [],
+  visibleCorpses: [],
 };
 
 const cache = {
   queue: new Map(),
   frameCache: {},
   loadPromises: {},
+
+  geneCache: new Map(),     // id → gene
+  geneRequestQueue: new Set(),
+  geneQueueList: [],
 };
 
 // === 유틸 함수 ===
@@ -84,6 +91,29 @@ function cacheFile(filename, frames) {
   }
 }
 
+async function fetchGeneInfo(id) {
+  if (cache.geneCache.has(id)) return;
+  if (cache.geneRequestQueue.has(id)) return;
+  cache.geneRequestQueue.add(id);
+
+  try {
+    const res = await fetch(`/logs/${id}`);
+    if (!res.ok) throw new Error("유전자 요청 실패");
+    const geneInfo = await res.json();
+    cache.geneCache.set(id, geneInfo);
+    cache.geneQueueList.push(id);
+
+    if (cache.geneQueueList.length > CONFIG.GENE_CACHE_LIMIT) {
+      const oldest = cache.geneQueueList.shift();
+      cache.geneCache.delete(oldest);
+    }
+  } catch (e) {
+    console.warn(`❌ 유전자 정보 로드 실패 (id: ${id})`, e);
+  } finally {
+    cache.geneRequestQueue.delete(id);
+  }
+}
+
 // === 유틸: 현재 가시 그리드 범위 계산
 function updateVisibleGridRange() {
   const { x: minX, y: minY } = screenToWorld(0, 0);
@@ -100,42 +130,74 @@ function updateVisibleGridRange() {
 function extractVisibleFromTurn(turnData) {
   const grids = turnData[1];
   const creatures = [];
+  const corpses = [];
   const visibleGrids = [];
   const { minX, maxX, minY, maxY } = state.visibleGridRange;
+
+  const shouldFetchGene = state.zoom >= CONFIG.GENE_FETCH_ZOOM_THRESHOLD;
 
   for (let y = minY; y <= maxY; y++) {
     if (!grids[y]) continue;
     for (let x = minX; x <= maxX; x++) {
       const cell = grids[y][x];
       if (!cell) continue;
-      const [organics, creatureList] = cell;
+      const [organics, creatureList, corpsesList] = cell;
       visibleGrids.push({ x, y, organics });
+
       for (const [id, cx, cy, hp, energy] of creatureList) {
-        creatures.push({ id, x: cx, y: cy, hp, energy });
+        let gene = null;
+
+        if (shouldFetchGene) {
+          if (cache.geneCache.has(id)) {
+            gene = cache.geneCache.get(id);
+          } else {
+            fetchGeneInfo(id);
+          }
+        }
+
+        creatures.push({ id, x: cx, y: cy, hp, energy, gene });
+      }
+
+      for (const [cx, cy, energy] of corpsesList) {
+        corpses.push({ x: cx, y: cy, energy });
       }
     }
   }
 
   state.visibleGrids = visibleGrids;
   state.visibleCreatures = creatures;
+  state.visibleCorpses = corpses;
 }
 
 function handleObjectSelection(screenX, screenY) {
   const world = screenToWorld(screenX, screenY);
-  const found = state.parsedObjects.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < 10);
-  state.selectedObject = (state.selectedObject?.id === found?.id) ? null : found;
-  updateInfoBox();
+  state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < 10);
+  // updateInfoBox();
+  // console.debug(`${found}`)
+  // console.debug(`${state.selectedObject}`)
 }
-
 function updateInfoBox() {
   const sidebar = document.getElementById("sidebar");
-  const latest = state.parsedObjects.find(obj => obj.id === state.selectedObject?.id);
-  sidebar.innerHTML = latest ? `
-    <h3>Creature #${latest.id}</h3>
-    <p><strong>HP:</strong> ${latest.hp.toFixed(2)}</p>
-    <p><strong>Energy:</strong> ${latest.energy.toFixed(4)}</p>
-    <p><strong>Position:</strong><br>X: ${latest.x.toFixed(2)}<br>Y: ${latest.y.toFixed(2)}</p>
-  ` : "<em>No object selected</em>";
+  const latest = state.visibleCreatures.find(obj => obj.id === state.selectedObject?.id);
+
+  if (!latest) {
+    sidebar.innerHTML = "<em>No object selected</em>";
+    return;
+  }
+
+  const lines = [
+    `<h3>Creature #${latest.id}</h3>`,
+    `<p><strong>HP:</strong> ${latest.hp.toFixed(2)}</p>`,
+    `<p><strong>Energy:</strong> ${latest.energy.toFixed(4)}</p>`,
+    `<p><strong>Position:</strong><br>X: ${latest.x.toFixed(2)}<br>Y: ${latest.y.toFixed(2)}</p>`,
+  ];
+
+  // 유전자 정보가 있으면 추가
+  if (latest.gene) {
+    lines.push(`<pre><strong>Gene:</strong>\n${JSON.stringify(latest.gene, null, 2)}</pre>`);
+  }
+
+  sidebar.innerHTML = lines.join("\n");
 }
 
 // === 렌더링 ===
@@ -162,15 +224,34 @@ function render() {
     const gy = y * CONFIG.GRID_SIZE;
     const { x: sx, y: sy } = worldToScreen(gx, gy);
     const energy = organics.reduce((a, b) => a + b, 0);
-    ctx.fillStyle = `rgba(80,100,100,${Math.min(energy / CONFIG.ORGANIC_ENERGY_SCALE, 1.0).toFixed(2)})`;
+    ctx.fillStyle = `rgba(254,255,192,${Math.min(energy / CONFIG.ORGANIC_ENERGY_SCALE, 1.0).toFixed(2)})`;
     ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
   }
-
+  
   for (const obj of state.visibleCreatures) {
+    const { x, y } = worldToScreen(obj.x, obj.y);
+    const isSelected = state.selectedObject?.id === obj.id;
+
+    ctx.beginPath();
+
+    const radius = obj.gene
+      ? obj.gene.size * CONFIG.CREATURE_RADIUS * state.zoom
+      : CONFIG.CREATURE_RADIUS * state.zoom;
+
+    const fillColor = obj.gene
+      ? `rgb(${obj.gene.species_color_rgb.join(",")})`
+      : "rgb(100,100,100)";
+
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+  }
+
+  for (const obj of state.visibleCorpses) {
     const { x, y } = worldToScreen(obj.x, obj.y);
     ctx.beginPath();
     ctx.arc(x, y, CONFIG.CREATURE_RADIUS * state.zoom, 0, Math.PI * 2);
-    ctx.fillStyle = (state.selectedObject?.id === obj.id) ? "rgb(254,255,192)" : "rgb(193,175,255)";
+    ctx.fillStyle = `rgba(204,255,102,${Math.min(obj.energy / 5, 1.0).toFixed(2)})`;
     ctx.fill();
   }
 
