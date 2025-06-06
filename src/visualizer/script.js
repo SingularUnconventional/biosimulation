@@ -6,13 +6,15 @@ canvas.height = window.innerHeight - 40;
 
 const CONFIG = {
   GRID_SIZE: 400,
-  ORGANIC_ENERGY_SCALE: 400.0,
-  CREATURE_RADIUS: 16,
+  ORGANIC_ENERGY_SCALE: 4000.0,
+  CREATURE_RADIUS: 64,
   FRAMES_PER_FILE: 100,
   LOG_DIR: "/logs/compressed/",
+  CREATURE_SHEET_DIR: "/logs/creature_sheet.png",
+  CREATURE_SIZE_DIR: "/logs/creature_sheet_size.jsonl",
   MAX_CACHE_FILES: 4,
   PRELOAD_LOOKAHEAD: 3,
-  GENE_FETCH_ZOOM_THRESHOLD: 0.1,
+  GENE_FETCH_ZOOM_THRESHOLD: 0.5,
   GENE_CACHE_LIMIT: 10000,
 };
 
@@ -22,7 +24,7 @@ const state = {
   lastMouse: { x: 0, y: 0 }, lastTouch: [], lastDist: null,
   tapStartPos: null, tapStartTime: 0,
   currentFrame: 1, totalFrames: 0,
-  parsedObjects: [], selectedObject: null,
+  selectedObject: null, selectedObjectData: null,
   currentFileFrames: [], currentFileRange: { start: -1, end: -1 },
 
   visibleGridRange: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
@@ -39,6 +41,12 @@ const cache = {
   geneCache: new Map(),     // id → gene
   geneRequestQueue: new Set(),
   geneQueueList: [],
+};
+
+const CreatureSheetCache = {
+  sheetImage: null,  // HTMLImageElement
+  sizeArray: [],
+  ready: false,
 };
 
 // === 유틸 함수 ===
@@ -111,6 +119,7 @@ async function fetchGeneInfo(id) {
     console.warn(`❌ 유전자 정보 로드 실패 (id: ${id})`, e);
   } finally {
     cache.geneRequestQueue.delete(id);
+    return cache.geneCache.get(id);
   }
 }
 
@@ -134,8 +143,6 @@ function extractVisibleFromTurn(turnData) {
   const visibleGrids = [];
   const { minX, maxX, minY, maxY } = state.visibleGridRange;
 
-  const shouldFetchGene = state.zoom >= CONFIG.GENE_FETCH_ZOOM_THRESHOLD;
-
   for (let y = minY; y <= maxY; y++) {
     if (!grids[y]) continue;
     for (let x = minX; x <= maxX; x++) {
@@ -145,17 +152,13 @@ function extractVisibleFromTurn(turnData) {
       visibleGrids.push({ x, y, organics });
 
       for (const [id, cx, cy, hp, energy] of creatureList) {
-        let gene = null;
-
-        if (shouldFetchGene) {
-          if (cache.geneCache.has(id)) {
-            gene = cache.geneCache.get(id);
-          } else {
-            fetchGeneInfo(id);
-          }
-        }
-
-        creatures.push({ id, x: cx, y: cy, hp, energy, gene });
+        creatures.push({
+          id,
+          x: cx,
+          y: cy,
+          hp,
+          energy
+        });
       }
 
       for (const [cx, cy, energy] of corpsesList) {
@@ -169,9 +172,34 @@ function extractVisibleFromTurn(turnData) {
   state.visibleCorpses = corpses;
 }
 
+
+const CreatureImageCache = new Map();
+
+function extractCreatureByIndex(index, tileSize = 16) {
+  if (CreatureImageCache.has(index)) return CreatureImageCache.get(index);
+
+  const sheet = CreatureSheetCache.sheetImage;
+  const cols = Math.floor(sheet.width / tileSize);
+  const cx = (index % cols) * tileSize;
+  const cy = Math.floor(index / cols) * tileSize * 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = tileSize;
+  canvas.height = tileSize * 2;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(sheet, cx, cy, tileSize, tileSize * 2, 0, 0, tileSize, tileSize * 2);
+
+  CreatureImageCache.set(index, canvas); // 캐시 저장
+  return canvas;
+}
+
 function handleObjectSelection(screenX, screenY) {
   const world = screenToWorld(screenX, screenY);
   state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < 10);
+  fetchGeneInfo(state.selectedObject.id).then(data => {
+    state.selectedObjectData = data;
+  });
   // updateInfoBox();
   // console.debug(`${found}`)
   // console.debug(`${state.selectedObject}`)
@@ -193,8 +221,8 @@ function updateInfoBox() {
   ];
 
   // 유전자 정보가 있으면 추가
-  if (latest.gene) {
-    lines.push(`<pre><strong>Gene:</strong>\n${JSON.stringify(latest.gene, null, 2)}</pre>`);
+  if (state.selectedObjectData) {
+    lines.push(`<pre><strong>Gene:</strong>\n${JSON.stringify(state.selectedObjectData, null, 2)}</pre>`);
   }
 
   sidebar.innerHTML = lines.join("\n");
@@ -218,6 +246,7 @@ function render() {
   if (!Array.isArray(grids)) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = false;
 
   for (const { x, y, organics } of state.visibleGrids) {
     const gx = x * CONFIG.GRID_SIZE;
@@ -227,34 +256,53 @@ function render() {
     ctx.fillStyle = `rgba(254,255,192,${Math.min(energy / CONFIG.ORGANIC_ENERGY_SCALE, 1.0).toFixed(2)})`;
     ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
   }
-  
-  for (const obj of state.visibleCreatures) {
-    const { x, y } = worldToScreen(obj.x, obj.y);
-    const isSelected = state.selectedObject?.id === obj.id;
-
-    ctx.beginPath();
-
-    const radius = obj.gene
-      ? obj.gene.size * CONFIG.CREATURE_RADIUS * state.zoom
-      : CONFIG.CREATURE_RADIUS * state.zoom;
-
-    const fillColor = obj.gene
-      ? `rgb(${obj.gene.species_color_rgb.join(",")})`
-      : "rgb(100,100,100)";
-
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-  }
 
   for (const obj of state.visibleCorpses) {
     const { x, y } = worldToScreen(obj.x, obj.y);
     ctx.beginPath();
-    ctx.arc(x, y, CONFIG.CREATURE_RADIUS * state.zoom, 0, Math.PI * 2);
+    ctx.arc(x, y, CONFIG.CREATURE_RADIUS * state.zoom/2, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(204,255,102,${Math.min(obj.energy / 5, 1.0).toFixed(2)})`;
     ctx.fill();
   }
 
+  const shouldFetchImg = state.zoom >= CONFIG.GENE_FETCH_ZOOM_THRESHOLD
+  for (const obj of state.visibleCreatures) {
+    const { x, y } = worldToScreen(obj.x, obj.y);
+
+    const isSelected = state.selectedObject?.id === obj.id;
+    const drawSize = CONFIG.CREATURE_RADIUS * CreatureSheetCache.sizeArray[obj.id] * state.zoom;
+
+    if(shouldFetchImg){
+      let creatureCanvas = null;
+
+      if (obj.id !== undefined && CreatureSheetCache.ready) {
+        // 미리 추출된 이미지를 obj에 할당해 두었거나, 실시간 추출
+        creatureCanvas = obj.imageCanvas ?? extractCreatureByIndex(obj.id);
+        obj.imageCanvas = creatureCanvas; // 캐시 (선택)
+      }
+
+      if (creatureCanvas) {
+        ctx.drawImage(
+          creatureCanvas,
+          x - drawSize / 2,
+          y - drawSize,
+          drawSize,
+          drawSize * 2
+        );
+      } else {
+        // 유전자 없음 → 회색 원
+        ctx.beginPath();
+        ctx.arc(x, y, drawSize, 0, Math.PI * 2);
+        ctx.fillStyle = "rgb(100,100,100)";
+        ctx.fill();
+      }
+    } else {
+      ctx.beginPath();
+        ctx.arc(x, y, drawSize/2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgb(100,100,100)";
+        ctx.fill();
+    }
+  }
 }
 
 // === 프레임 업데이트 ===
@@ -409,6 +457,29 @@ canvas.addEventListener("touchend", e => {
   }
 });
 
+async function preloadCreatureSheetAndSize(sheetUrl=CONFIG.CREATURE_SHEET_DIR, sizeUrl=CONFIG.CREATURE_SIZE_DIR) {
+  // 1. 이미지 로드
+  const img = new Image();
+  const imageLoaded = new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+  });
+  img.src = sheetUrl;
+  await imageLoaded;
+
+  CreatureSheetCache.sheetImage = img;
+
+  // 2. size.jsonl 로드
+  const response = await fetch(sizeUrl);
+  const text = await response.text();
+  CreatureSheetCache.sizeArray = text
+    .trim()
+    .split("\n")
+    .map(Number); // ← 실수 배열로 변환
+
+  CreatureSheetCache.ready = true;
+}
+
 async function detectTotalFrames() {
   const text = await (await fetch(`${CONFIG.LOG_DIR}index.jsonl`)).text();
   const lastLine = text.trim().split("\n").pop();
@@ -416,6 +487,7 @@ async function detectTotalFrames() {
 }
 
 (async function start() {
+  await preloadCreatureSheetAndSize();
   await detectTotalFrames();
   const { filename, start, end } = findFileForFrame(state.currentFrame);
   state.currentFileFrames = await loadCompressedFile(filename);

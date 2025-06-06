@@ -15,6 +15,8 @@ from dataclasses import asdict
 import zstandard as zstd
 import json
 import base64
+import io
+import zipfile
 
 
 app = Flask(__name__)
@@ -26,6 +28,7 @@ LOGS_DIR = PROJECT_ROOT / 'logs'
 LOGS_COMPRESSED_DIR = LOGS_DIR / 'compressed'
 GENETIC_DATA_PATH = LOGS_DIR / "static_data.jsonl"
 OFFSET_INDEX_PATH = LOGS_DIR / "offsets.bin"
+CREATURE_SHEET_PATH = LOGS_DIR / "creature_sheet.png"
 
 
 # === 유틸 함수 ===
@@ -78,7 +81,9 @@ def compressed_logs(filename):
 
 @app.route('/logs/<int:object_id>')
 def serve_gene(object_id):
+    global offset_index
     if object_id >= len(offset_index):
+        offset_index = load_offset_index()
         abort_with_log(404, f"ID {object_id}에 해당하는 유전자 정보가 존재하지 않습니다.")
     try:
         offset = offset_index[object_id]
@@ -90,6 +95,27 @@ def serve_gene(object_id):
             return jsonify(interpreted)
     except Exception as e:
         abort_with_log(500, f"유전자 처리 중 오류 발생: {e}")
+
+@app.route("/logs/sheet")
+def serve_zipped_creature_sheet():
+    try:
+        if not os.path.exists(CREATURE_SHEET_PATH):
+            abort_with_log(404, "시트 이미지가 존재하지 않습니다.")
+
+        # ZIP 버퍼 생성
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(CREATURE_SHEET_PATH, arcname="creature_sheet.png")
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="creature_sheet.zip"
+        )
+    except Exception as e:
+        abort_with_log(500, f"시트 압축 중 오류 발생: {e}")
 
 @app.route('/logs/<path:filename>')
 def raw_logs(filename):

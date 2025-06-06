@@ -36,6 +36,7 @@ class World:
             gridPos = get_grid_coords(pos)
             creature = Creature(pos, np.random.randint(0, 256, 150, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
             self.world[gridPos.y][gridPos.x].creatures.add(creature)
+            self.logs.register_creature({creature})
 
     def build_vision_refs(self, max_radius: int):
         """모든 Grid에 대해 시야 반경별 creatures 참조 리스트 생성"""
