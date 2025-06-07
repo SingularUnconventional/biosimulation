@@ -36,11 +36,31 @@ class Creature:
 
         self._locate = Vector2(np.random.uniform(-1, 1), np.random.uniform(-1, 1))
 
+        self.move()
+
     def __hash__(self):
         return hash(self.id)
 
     def __eq__(self, other):
         return isinstance(other, Creature) and self.id == other.id
+    
+    def find_creatures_within(self, max_distance: float) -> list['Creature']:
+        """같은 grid 내에서 자신을 제외하고 특정 거리 이하의 모든 개체를 반환"""
+        others = [c for c in self.grid.creatures if c is not self]
+        if not others:
+            return []
+
+        self_pos = np.array([self.position.x, self.position.y])
+        positions = np.array([[c.position.x, c.position.y] for c in others])
+
+        deltas = positions - self_pos
+        dists_sq = np.einsum("ij,ij->i", deltas, deltas)
+        max_dist_sq = max_distance ** 2
+
+        # 거리 제한 이하인 인덱스 필터링
+        valid_indices = np.where(dists_sq <= max_dist_sq)[0]
+
+        return [others[i] for i in valid_indices]
     
     def update(self) -> list["Creature"] | str | None:
         
@@ -58,17 +78,23 @@ class Creature:
                 self.energy     += self.traits.actual_intake
                 self.grid.organics[self.traits.food_intake] -= self.traits.intake_rates
 
-        
+        for creature in self.find_creatures_within(self.traits.size/2):
+            creature.health -= self.traits.retaliation_damage
 
         # 죽음
-        if self.energy <= self.traits.energy_reserve*0.3 or self.life_start_time+self.traits.lifespan < self.world.time:
+        if (self.energy < self.traits.energy_reserve*0.3 or 
+            self.life_start_time+self.traits.lifespan < self.world.time or
+            self.health < 0):
             return "die"
         
         if self.energy > self.traits.initial_offspring_energy*self.traits.offspring_count*2:
             return self.breed()
 
-        # 이동 및 번식
+        # 이동
+        if self.traits.speed == 0: return None
+
         return self.move()
+        
 
     def move(self):
         new_position = self._locate*self.traits.speed + self.position
@@ -104,7 +130,10 @@ class Creature:
     def breed(self):
         self.energy -= self.traits.initial_offspring_energy*self.traits.offspring_count
         return [Creature(
-                self.position+Vector2(-np.random.random(), -np.random.random()), 
+                self.position+Vector2(
+                np.cos(theta := np.random.uniform(0, 2 * np.pi)) * self.traits.size,
+                np.sin(theta) * self.traits.size
+            ), 
                 self.genome.crossover(self.genome.genome_bytes, self.traits.mutation_intensity), 
                 self.world, 
                 self.grid,

@@ -14,9 +14,9 @@ class Genome:
     # 1 - 리스트 값 (누적 또는 추가)
     # 2 - 중첩 리스트 값 (복잡한 구조 표현)
     GENE_DEFINITIONS = [
-        ('size',                        0, apply_weight_or_default,    (0.01,     0.1,  100000, 0.1)),
-        ('limb_length_factor',          0, apply_weight_or_default,    (0.02,     0.1,       5, 0.1)),
-        ('muscle_density',              0, apply_weight_or_default,    (0.02,     0.1,       5, 0.1)),
+        ('size',                        0, apply_weight_or_default,    (0.1,      0.1,  100000, 0.1)),
+        ('limb_length_factor',          0, apply_weight_or_default,    (0.02,       0,       5)),
+        ('muscle_density',              0, apply_weight_or_default,    (0.02,       0,       5)),
         ('skin_thickness',              0, apply_weight_or_default,    (0.01,     0.1,      50, 0.01)),
         ('attack_organ_power',          0, apply_weight_or_default,    (0.4,      0.1,     100)),
         ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),

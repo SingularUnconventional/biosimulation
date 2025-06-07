@@ -5,16 +5,16 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight - 40;
 
 const CONFIG = {
-  GRID_SIZE: 400,
-  ORGANIC_ENERGY_SCALE: 4000.0,
-  CREATURE_RADIUS: 64,
+  GRID_SIZE: 40,
+  ORGANIC_ENERGY_SCALE: 30000000.0,
+  CREATURE_RADIUS: 1,
   FRAMES_PER_FILE: 100,
   LOG_DIR: "/logs/compressed/",
   CREATURE_SHEET_DIR: "/logs/creature_sheet.png",
   CREATURE_SIZE_DIR: "/logs/creature_sheet_size.jsonl",
   MAX_CACHE_FILES: 4,
   PRELOAD_LOOKAHEAD: 3,
-  GENE_FETCH_ZOOM_THRESHOLD: 0.5,
+  GENE_FETCH_ZOOM_THRESHOLD: 5,
   GENE_CACHE_LIMIT: 10000,
 };
 
@@ -100,8 +100,8 @@ function cacheFile(filename, frames) {
 }
 
 async function fetchGeneInfo(id) {
-  if (cache.geneCache.has(id)) return;
-  if (cache.geneRequestQueue.has(id)) return;
+  if (cache.geneCache.has(id)) return cache.geneCache.get(id);
+  if (cache.geneRequestQueue.has(id)) return cache.geneCache.get(id);
   cache.geneRequestQueue.add(id);
 
   try {
@@ -179,16 +179,14 @@ function extractCreatureByIndex(index, tileSize = 16) {
   if (CreatureImageCache.has(index)) return CreatureImageCache.get(index);
 
   const sheet = CreatureSheetCache.sheetImage;
-  const cols = Math.floor(sheet.width / tileSize);
-  const cx = (index % cols) * tileSize;
-  const cy = Math.floor(index / cols) * tileSize * 2;
+  const cx = index * tileSize;
 
   const canvas = document.createElement("canvas");
   canvas.width = tileSize;
   canvas.height = tileSize * 2;
 
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(sheet, cx, cy, tileSize, tileSize * 2, 0, 0, tileSize, tileSize * 2);
+  ctx.drawImage(sheet, cx, 0, tileSize, tileSize * 2, 0, 0, tileSize, tileSize * 2);
 
   CreatureImageCache.set(index, canvas); // 캐시 저장
   return canvas;
@@ -196,7 +194,7 @@ function extractCreatureByIndex(index, tileSize = 16) {
 
 function handleObjectSelection(screenX, screenY) {
   const world = screenToWorld(screenX, screenY);
-  state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < 10);
+  state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < CreatureSheetCache.sizeArray[obj.id]);
   fetchGeneInfo(state.selectedObject.id).then(data => {
     state.selectedObjectData = data;
   });
@@ -261,7 +259,7 @@ function render() {
     const { x, y } = worldToScreen(obj.x, obj.y);
     ctx.beginPath();
     ctx.arc(x, y, CONFIG.CREATURE_RADIUS * state.zoom/2, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(204,255,102,${Math.min(obj.energy / 5, 1.0).toFixed(2)})`;
+    ctx.fillStyle = `rgba(204,255,102,${Math.min(obj.energy / 5000, 1.0).toFixed(2)})`;
     ctx.fill();
   }
 
@@ -270,7 +268,7 @@ function render() {
     const { x, y } = worldToScreen(obj.x, obj.y);
 
     const isSelected = state.selectedObject?.id === obj.id;
-    const drawSize = CONFIG.CREATURE_RADIUS * CreatureSheetCache.sizeArray[obj.id] * state.zoom;
+    const drawSize = CreatureSheetCache.sizeArray[obj.id] * state.zoom;
 
     if(shouldFetchImg){
       let creatureCanvas = null;
@@ -289,16 +287,11 @@ function render() {
           drawSize,
           drawSize * 2
         );
-      } else {
-        // 유전자 없음 → 회색 원
-        ctx.beginPath();
-        ctx.arc(x, y, drawSize, 0, Math.PI * 2);
-        ctx.fillStyle = "rgb(100,100,100)";
-        ctx.fill();
       }
+      
     } else {
       ctx.beginPath();
-        ctx.arc(x, y, drawSize/2, 0, Math.PI * 2);
+        ctx.arc(x, y, drawSize*CONFIG.CREATURE_RADIUS/2, 0, Math.PI * 2);
         ctx.fillStyle = "rgb(100,100,100)";
         ctx.fill();
     }

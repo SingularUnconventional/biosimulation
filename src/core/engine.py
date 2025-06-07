@@ -13,7 +13,7 @@ class World:
     def __init__(self):
         self.time = 0
 
-        self.solar_conversion_bonus = 10
+        self.solar_conversion_bonus = 5000000000
 
         organics_noise = generate_noise_field(
             shape=(WORLD_WIDTH_SCALE, WORLD_HIGHT_SCALE),
@@ -60,6 +60,7 @@ class World:
                 grid.process_creatures(self)
                 #grid.organics.regenerate()
         self.logs.log_turn()
+        #print(self.time)
         self.time += 1
 
 class Grid:
@@ -69,7 +70,7 @@ class Grid:
         self.corpses = set()
         self.vision_refs = []  # 시야 반경별 참조 리스트 초기화
 
-        self.organics = [((organic_affinity[i] + 1) * 0.5 * START_ORGANIC_RATE) for i in range(NUM_ORGANIC)]
+        self.organics = [((organic_affinity[i] + 1) * 0.5 * START_ORGANIC_RATES[i]) for i in range(NUM_ORGANIC)]
         # self.organics = OrganicMatterSource([
         #     ((organic_affinity[i] + 1) * 0.5 * ORGANIC_GEN_RATE[i],
         #      (organic_affinity[i] + 1) * 0.5 * ORGANIC_MAX_AMOUNT[i])

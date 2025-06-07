@@ -27,10 +27,10 @@ class Viewer:
 			print(f"| {self.count}/{self.passcount} | {percent:.1f}% {passed}>{remaining}", end='\r')
 			return
 		import os
-		if os.name == 'nt':  # Windows
-			os.system('cls')
-		else:  # Linux, macOS 등
-			os.system('clear')
+		# if os.name == 'nt':  # Windows
+		# 	os.system('cls')
+		# else:  # Linux, macOS 등
+		# 	os.system('clear')
 		creatures = list(set().union(*[
 			set().union(*[
 				self.world.world[y][x].creatures 
@@ -42,13 +42,13 @@ class Viewer:
 		# 	if creature.id == 11776:
 		# 		self.scNumber = i
 
-		print('Trun:', self.count, '\tsize:', len(creatures), '\tgeneS:', len(creatures[self.scNumber].genome.genome_bytes))
-		print('%-25s' % 'id', creatures[self.scNumber].id)
-		for name, trait in asdict(creatures[self.scNumber].traits).items():
-			print('%-25s' % name, trait)
-		print('%-25s' % 'energy', creatures[self.scNumber].energy)
-		print('%-25s' % 'Pos', f"x={creatures[self.scNumber].position.x:.3f} y={creatures[self.scNumber].position.y:.3f}")
-		print('%-25s' % 'GridPos', f"x={creatures[self.scNumber].grid.pos.x} y= {creatures[self.scNumber].grid.pos.y}")
+		print('Trun:', self.count, '\tsize:', len(creatures))
+		# print('%-25s' % 'id', creatures[self.scNumber].id)
+		# for name, trait in asdict(creatures[self.scNumber].traits).items():
+		# 	print('%-25s' % name, trait)
+		# print('%-25s' % 'energy', creatures[self.scNumber].energy)
+		# print('%-25s' % 'Pos', f"x={creatures[self.scNumber].position.x:.3f} y={creatures[self.scNumber].position.y:.3f}")
+		# print('%-25s' % 'GridPos', f"x={creatures[self.scNumber].grid.pos.x} y= {creatures[self.scNumber].grid.pos.y}")
 		# for yGrid in self.world.world:
 		# 	for Grid in yGrid:
 		# 		print(f"{Grid.organics.current_amounts[0]:.0f}", end=' ')

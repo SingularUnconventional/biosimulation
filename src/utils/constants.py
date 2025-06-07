@@ -1,7 +1,7 @@
 #프로젝트 전반에서 사용하는 상수를 정의
 
-GRID_WIDTH_SCALE   = 400
-GRID_HIGHT_SCALE   = 400
+GRID_WIDTH_SCALE   = 40
+GRID_HIGHT_SCALE   = 40
 
 WORLD_WIDTH_SCALE   = 50
 WORLD_HIGHT_SCALE   = 50
@@ -15,19 +15,19 @@ FOOD_START_ENERGY	= 0.001
 SUBSTANCE_A_ENERGY	= 0.0
 
 NUM_ORGANIC         = 4
-START_ORGANIC_RATE  = 1000
+START_ORGANIC_RATES  = [30000000, 300000, 300000, 300000]
 #ORGANIC_GEN_RATE    = [0.1, 0.2, 0.3, 0.4]
 #ORGANIC_MAX_AMOUNT  = [250, 500, 750, 1000]
 
-ENERGY_INTAKE_RATES = [0.05, 0.8, 0.8, 0.8, 1.0]
-DECAY_RETURN_ENERGY = [0.001, 0.002, 0.003, 0.003]
+ENERGY_INTAKE_RATES = [0.00000001, 8, 8, 8, 1]
+DECAY_RETURN_ENERGY = [3, 0.02, 0.02, 0.01]
 
 #지형에 따른 부식률 노이즈 생성.
 
 # ======== 개체 상수 ========
 
 # 대사량
-BASAL_METABOLIC_CONSTANT        = 0.002  						# 기초 대사량 계수
+BASAL_METABOLIC_CONSTANT        = 0.02  						# 기초 대사량 계수
 BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (Kleiber's law 기반)
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
@@ -42,8 +42,8 @@ VISIBLE_ENTITY_ENERGY_COST      = 0.02		# 감지 가능한 생물 수당 비용
 FOOD_LOCATION_ENERGY_COST       = 0.05		# 음식 위치 감지 여부에 따른 비용
 
 # 신체활동
-LIMB_LENGTH_ENERGY_COST         = 0.1		# 팔다리 길이에 따른 비용
-MUSCLE_DENSITY_ENERGY_COST      = 0.5	    # 근밀도에 따른 비용
+LIMB_LENGTH_ENERGY_COST         = 20		# 팔다리 길이에 따른 비용
+MUSCLE_DENSITY_ENERGY_COST      = 100	    # 근밀도에 따른 비용
 SKIN_THICKNESS_ENERGY_COST      = 0.1	    # 피부 두께에 따른 비용
 ATTACK_ORGAN_ENERGY_COST        = 0.015	    # 공격 기관 파괴력에 따른 비용
 
@@ -52,11 +52,11 @@ BASE_HEALTH                     = 100.0
 SIZE_HEALTH_MULTIPLIER          = 2.0
 SKIN_HEALTH_MULTIPLIER          = 10.0
 ATTACK_COST_RATIO               = 0.007
-SPEED_BASE                      = 1.0
+SPEED_BASE                      = 0.05
 SPEED_MASS_INFLUENCE            = 0.4
-LIFESPAN_SCALE                  = 50.0
+LIFESPAN_SCALE                  = 5000.0
 
 # 에너지 저장
 ENERGY_RESERVE_MUSCLE_MULTIPLIER= 0.5      # 근밀도가 에너지 저장량에 미치는 영향
 ENERGY_RESERVE_SKIN_MULTIPLIER  = 0.1      # 피부 두께가 에너지 저장량에 미치는 영향
-ENERGY_RESERVE_MULTIPLIER       = 10       # 전체적인 에너지 저장량
+ENERGY_RESERVE_MULTIPLIER       = 10000   # 전체적인 에너지 저장량

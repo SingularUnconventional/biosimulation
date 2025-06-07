@@ -1,9 +1,5 @@
-import sys
-import os
-import math
-import base64
-import json
-import colorsys
+import sys, os
+import math, base64, struct, json, colorsys
 import numpy as np
 from PIL import Image
 from dataclasses import asdict
@@ -16,7 +12,7 @@ from src.entities.genome import Genome
 
 # === 상수 설정 ===
 TILE_SIZE = 16
-SPRITE_PATH = "assets\parts_template_16x16.png"
+SPRITE_PATH = "assets/parts_template_16x16.png"
 STATIC_PATH = "logs/static_data.jsonl"
 IMAGE_PATH   = "logs/creature_sheet.png"
 
@@ -70,9 +66,9 @@ def paste_tile(canvas, sheet, x, y, w, h, hue_sat=None):
 # === 파츠 인덱스 매핑 ===
 def map_gene_to_parts(gene):
     return {
-        'body': min(int(math.log10(max(gene['size'], 1))), 6),
-        'xlegs': int((gene['muscle_density'] - 0.1) / (5.0 - 0.1) * 3.999),
-        'ylegs': int((gene['limb_length_factor'] - 0.1) / (5.0 - 0.1) * 3.999),
+        'body': min(int(max(math.log10(gene['size']*100-1), 0)), 6),
+        'xlegs': int((0 if gene['muscle_density']*gene['limb_length_factor'] == 0 else gene['muscle_density']) / 5.0 * 3.999 +0.5),
+        'ylegs': int((0 if gene['muscle_density']*gene['limb_length_factor'] == 0 else gene['limb_length_factor']) / 5.0 * 3.999 +0.5),
         'mouth': gene['food_intake'] if gene['food_intake'] < 4 else 4 + int(gene['attack_organ_power'] / 100 * 3.999),
         'tail': gene['reproductive_mode'],
         'eye_index': int(gene['visible_entities'] / 500 * 2.999),
@@ -110,20 +106,38 @@ def generate_creature_image(sprite_path, body, xlegs, ylegs, mouth, tail, eye_in
 
     return canvas
 
+def reset_creature_sheet():
+    if os.path.exists(IMAGE_PATH):
+        os.remove(IMAGE_PATH)
+
+from pathlib import Path
 # === 시트 이미지 생성 ===
-def generate_creature_sheet(tile_size=16):
-    with open(STATIC_PATH, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+def generate_creature_sheet(lines=[], tile_size=16):
+    # # === 데이터 불러오기 ===
+    # with open(STATIC_PATH, "r", encoding="utf-8") as f:
+    #     lines = f.readlines()
+    new_count = len(lines)
 
-    count = len(lines)
-    cols = math.ceil(math.sqrt(count))
-    rows = math.ceil(count / cols)
+    if Path(IMAGE_PATH).exists():
+        sheet_img = Image.open(IMAGE_PATH).convert("RGBA")
+        existing_width = sheet_img.width
+        new_width = existing_width + new_count * tile_size
+        new_height = tile_size * 2
+        new_img = Image.new("RGBA", (new_width, new_height), (0, 0, 0, 0))
+        new_img.paste(sheet_img, (0, 0))
+        start_idx = existing_width // tile_size
+        sheet_img = new_img
+        size_mode = "a"
+    else:
+        sheet_img = Image.new("RGBA", (new_count * tile_size, tile_size * 2), (0, 0, 0, 0))
+        start_idx = 0
+        size_mode = "w"
 
-    sheet_img = Image.new("RGBA", (cols * tile_size, rows * tile_size * 2), (0, 0, 0, 0))
-    
+    # === 크기 정보 파일 경로 및 모드 ===
     size_path = IMAGE_PATH.replace(".png", "_size.jsonl")
-    with open(size_path, "w", encoding="utf-8") as size_file:
-        for idx, line in enumerate(lines):
+    with open(size_path, size_mode, encoding="utf-8") as size_file:
+        for i, line in enumerate(lines):
+            idx = start_idx + i
             raw = base64.b64decode(line.strip())
             gene = asdict(Genome(raw).traits)
             parts = map_gene_to_parts(gene)
@@ -137,23 +151,20 @@ def generate_creature_sheet(tile_size=16):
                 **parts
             )
 
-            x = (idx % cols) * tile_size
-            y = (idx // cols) * tile_size * 2
-            sheet_img.paste(img, (x, y), img)
-
+            sheet_img.paste(img, (idx * tile_size, 0), img)
             size_file.write(f"{gene['size']:.3f}\n")
 
-            if idx % 100 == 0:
-                ratio = idx / count
+            if i % 100 == 0:
+                ratio = i / new_count
                 percent = ratio * 100
                 bar_len = 50
                 passed = "=" * int(ratio * bar_len)
                 remaining = "-" * (bar_len - len(passed))
-                print(f"| {idx}/{count} | {percent:.1f}% {passed}>{remaining}", end='\r')
+                print(f"| {i}/{new_count} | {percent:.1f}% {passed}>{remaining}", end='\r')
 
+    sheet_img.save(IMAGE_PATH)
+    print(f"✅ 저장 완료: {IMAGE_PATH} ({start_idx} → {start_idx + new_count})                           ")
 
-        sheet_img.save(IMAGE_PATH)
-        print(f"✅ 저장 완료: {IMAGE_PATH} ({cols}x{rows})")
 
 from PIL import Image
 
@@ -180,8 +191,9 @@ def load_creatures_from_sheet(indices, tile_size=16):
 
 # === 실행 ===
 if __name__ == "__main__":
-    generate_creature_sheet()
-    creatures = load_creatures_from_sheet([np.random.randint(30000) for _ in range(10000)])
-    print(len(creatures))
+    reset_creature_sheet()
+    #generate_creature_sheet()
+    #creatures = load_creatures_from_sheet([np.random.randint(30000) for _ in range(10000)])
+    #print(len(creatures))
     # for creature in creatures:
     #     Image._show(creature[1])

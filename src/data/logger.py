@@ -4,6 +4,8 @@ import base64
 import zstandard as zstd
 from dataclasses import asdict
 
+from src.utils.creature_sprite_tool import generate_creature_sheet, reset_creature_sheet
+
 class WorldLog:
     def __init__(self, grid_array, log_dir="logs", flush_interval=100):
         self.grid_array = grid_array
@@ -25,6 +27,8 @@ class WorldLog:
 
         self.static_creature_data = []
 
+        reset_creature_sheet()
+
     def register_creature(self, creatures):
         """새로운 생물체의 유전자 정보를 누적"""
         self.static_creature_data.extend([
@@ -34,6 +38,8 @@ class WorldLog:
 
     def write_static_data(self):
         """누적된 유전자 정보를 static_data.jsonl에 append하고, offsets.bin에도 오프셋 기록"""
+        generate_creature_sheet(lines=self.static_creature_data)
+
         if self.static_creature_data:
             with open(self.static_file, "a", encoding="utf-8") as f_data, \
                 open(self.offsets_file, "ab") as f_offset:
