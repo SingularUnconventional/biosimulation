@@ -14,7 +14,7 @@ const CONFIG = {
   CREATURE_SIZE_DIR: "/logs/creature_sheet_size.jsonl",
   MAX_CACHE_FILES: 4,
   PRELOAD_LOOKAHEAD: 3,
-  GENE_FETCH_ZOOM_THRESHOLD: 5,
+  GENE_FETCH_ZOOM_THRESHOLD: 2,
   GENE_CACHE_LIMIT: 10000,
 };
 
@@ -194,7 +194,7 @@ function extractCreatureByIndex(index, tileSize = 16) {
 
 function handleObjectSelection(screenX, screenY) {
   const world = screenToWorld(screenX, screenY);
-  state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < CreatureSheetCache.sizeArray[obj.id]);
+  state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < CreatureSheetCache.sizeArray[obj.id]/2);
   fetchGeneInfo(state.selectedObject.id).then(data => {
     state.selectedObjectData = data;
   });

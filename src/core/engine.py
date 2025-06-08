@@ -43,15 +43,20 @@ class World:
         for y in range(WORLD_HIGHT_SCALE):
             for x in range(WORLD_WIDTH_SCALE):
                 grid = self.world[y][x]
-                grid.vision_refs = []  # radius: List[List[Creature]]
+                grid.vision_refs = []  # radius: List[Set[Creature]]
+
                 for r in range(1, max_radius + 1):
-                    refs = []
+                    refs = set()
                     for dy in range(-r, r + 1):
+                        ny = y + dy
+                        if not (0 <= ny < WORLD_HIGHT_SCALE):
+                            continue
                         for dx in range(-r, r + 1):
-                            nx, ny = x + dx, y + dy
-                            if 0 <= nx < WORLD_WIDTH_SCALE and 0 <= ny < WORLD_HIGHT_SCALE:
-                                neighbor = self.world[ny][nx]
-                                refs.append(neighbor.creatures)  # 참조만 저장
+                            nx = x + dx
+                            if not (0 <= nx < WORLD_WIDTH_SCALE):
+                                continue
+                            neighbor = self.world[ny][nx]
+                            refs.update(neighbor.creatures)
                     grid.vision_refs.append(refs)
 
     def Trun(self):
@@ -77,6 +82,8 @@ class Grid:
         #     for i in range(NUM_ORGANIC)
         # ])
 
+        self.crying_sound = [0 for _ in range(1000)]
+        
     def process_creatures(self, world: World):
         creature_spawn_queue = set()
         creature_remove_queue = set()

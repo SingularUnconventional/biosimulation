@@ -1,5 +1,5 @@
-from src.utils.constants import *
 
+from src.utils.constants import *
 from dataclasses import dataclass
 
 #바이러스 특징
@@ -22,8 +22,16 @@ class Vector2:
 	def __add__(self, vector : 'Vector2') -> 'Vector2':
 		return Vector2(self.x + vector.x, self.y + vector.y)
 	
+	def __sub__(self, other: 'Vector2') -> 'Vector2':
+		return Vector2(self.x - other.x, self.y - other.y)
+	
 	def __mul__(self, other):
 		return Vector2(self.x*other, self.y*other)
+	
+	def distance_sq(self, other: 'Vector2') -> int:
+		dx = self.x - other.x
+		dy = self.y - other.y
+		return dx * dx + dy * dy
 	
 
 @dataclass
@@ -64,7 +72,6 @@ class Traits:
 	visible_entities 		: int			= None # 0 ~ 500			감지 가능한 생물 수 
 	can_locate_closest_food : bool			= None # 0/1				가장 가까운 음식 인지 여부
 
-	brain_synapses 			: list[list]	= None # 					뇌 시냅스 리스트 
 	brain_compute_cycles 	: int			= None # 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
 	
 	mutation_intensity 		: float			= None # 0.0 ~ 1.0			돌연변이 강도 
@@ -84,92 +91,9 @@ class Traits:
 	initial_offspring_energy: float			= None
 	intake_rates 			: float			= None	# 0.0 ~ 10000.0		시간당 음식 섭취량     
 	actual_intake			: float			= None
-
-
-	def __init__(self, genes:Genes):
-		self.compute_biological_traits(genes)
-
-	# 생리적 계수 설정
-	def compute_biological_traits(self, genes:Genes):# 10,000,000
-		# --- BMR 계산 ---
-		digestive_bonus = (genes.digestive_efficiency - DIGESTIVE_EFFICIENCY_BASELINE) * FOOD_EFFICIENCY_BMR_MULTIPLIER
-		brain_bonus     = len(genes.brain_synapses)   * genes.brain_compute_cycles * BRAIN_ENERGY_COST
-		visual_bonus    = genes.visual_resolution     * VISUAL_RESOLUTION_ENERGY_COST
-		auditory_bonus  = genes.auditory_range        * AUDITORY_RANGE_ENERGY_COST
-		visibility_bonus= genes.visible_entities      * VISIBLE_ENTITY_ENERGY_COST
-		locating_bonus  =                         FOOD_LOCATION_ENERGY_COST if genes.can_locate_closest_food else 0
-		mobility_bonus  = genes.limb_length_factor    * LIMB_LENGTH_ENERGY_COST + genes.muscle_density * MUSCLE_DENSITY_ENERGY_COST
-		skin_bonus      = genes.skin_thickness        * SKIN_THICKNESS_ENERGY_COST
-		attack_bonus    = genes.attack_organ_power    * ATTACK_ORGAN_ENERGY_COST
-
-		food_intake_penalty = genes.intake_rates * FOOD_DIGESTION_COSTS[genes.food_intake]
-
-		total_bmr_multiplier = BASE_MULTIPLIER + (
-			digestive_bonus + brain_bonus + visual_bonus + auditory_bonus +
-			visibility_bonus + locating_bonus + mobility_bonus + skin_bonus +
-			attack_bonus + food_intake_penalty
-		)
-
-		BMR = BASAL_METABOLIC_CONSTANT * (genes.size ** BASAL_METABOLIC_EXPONENT) * total_bmr_multiplier
-
-
-		# 체력 계산
-		health              = BASE_HEALTH + (SIZE_HEALTH_MULTIPLIER * genes.size) + (SKIN_HEALTH_MULTIPLIER * genes.skin_thickness)
-
-		# 전투 계산
-		attack_power        = (genes.muscle_density + genes.attack_organ_power) * genes.size
-		attack_cost         = BMR * ATTACK_COST_RATIO
-		retaliation_damage  = genes.size * genes.retaliation_damage_ratio
-
-		# 이동 속도 계산
-		speed               = SPEED_BASE * genes.limb_length_factor * ((genes.muscle_density / genes.size) ** SPEED_MASS_INFLUENCE)
-
-		# 수명 계산
-		lifespan            = LIFESPAN_SCALE * (genes.size / BMR)
-
-		# 에너지 저장량 계산
-		energy_reserve = genes.size * (
-			1 +
-			genes.muscle_density * ENERGY_RESERVE_MUSCLE_MULTIPLIER +
-			genes.skin_thickness * ENERGY_RESERVE_SKIN_MULTIPLIER
-		) * ENERGY_RESERVE_MULTIPLIER
-
-		# 자식에게 줄 초기 에너지 계산
-		initial_offspring_energy = energy_reserve * genes.offspring_energy_share / genes.offspring_count
-
-		# 시간당 에너지 섭취량 계산
-		intake_rates = genes.intake_rates * genes.size * ENERGY_INTAKE_RATES[genes.food_intake]
-
-		#실제 에너지 섭취량
-		actual_intake = intake_rates * genes.digestive_efficiency
-		
-
-		self.size                      = genes.size
-		self.digestive_efficiency      = genes.digestive_efficiency
-		self.food_intake			   = genes.food_intake
-
-		self.visual_resolution         = genes.visual_resolution
-		self.auditory_range            = genes.auditory_range
-		self.visible_entities          = genes.visible_entities
-		self.can_locate_closest_food   = genes.can_locate_closest_food
-
-		self.brain_synapses            = genes.brain_synapses
-		self.brain_compute_cycles      = genes.brain_compute_cycles
-		
-		self.mutation_intensity        = genes.mutation_intensity
-		self.reproductive_mode         = genes.reproductive_mode
-		self.calls                     = genes.calls
-		self.species_color_rgb         = genes.species_color_rgb
-		self.offspring_count           = genes.offspring_count
-
-		self.BMR                       = BMR
-		self.health                    = health
-		self.attack_power              = attack_power
-		self.attack_cost               = attack_cost
-		self.retaliation_damage        = retaliation_damage
-		self.speed                     = speed
-		self.lifespan                  = lifespan
-		self.energy_reserve            = energy_reserve
-		self.initial_offspring_energy  = initial_offspring_energy
-		self.intake_rates			   = intake_rates
-		self.actual_intake			   = actual_intake
+	brain_synapses 			: list[list]	= None # 					뇌 시냅스 리스트 
+	brain_max_nodeInx		: int			= None
+	brain_input_synapses	: list[int]   	= None
+	brain_output_synapses	: list[int]   	= None
+	brain_input_key_set		: set			= None
+	brain_output_key_set	: set			= None

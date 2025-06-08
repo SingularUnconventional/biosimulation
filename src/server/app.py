@@ -7,7 +7,7 @@ sys.path.append(parent_dir)
 
 
 from src.entities.genome import Genome
-from src.utils.datatypes import Traits
+from src.utils.trait_computer import compute_biological_traits
 
 from flask import Flask, jsonify, send_file, send_from_directory, abort, Response
 from pathlib import Path
@@ -91,7 +91,7 @@ def serve_gene(object_id):
             f.seek(offset)
             line = f.readline().decode("utf-8").strip()
             raw_bytes = base64.b64decode(line)
-            interpreted = asdict(Traits(Genome(raw_bytes).traits))
+            interpreted = asdict(compute_biological_traits(Genome(raw_bytes).traits))
             return jsonify(interpreted)
     except Exception as e:
         abort_with_log(500, f"유전자 처리 중 오류 발생: {e}")
