@@ -42,10 +42,10 @@ class Creature:
         self.move_speed = 0
         self.move_dir_x = np.random.uniform(-1, 1)
         self.move_dir_y = np.random.uniform(-1, 1)
-        self.attack_intent = True
+        self.attack_intent = False
         self.reproduce_intent = True
         self.eat_intent = True
-        self.cry_volume = [False for _ in range(10)]
+        self.cry_volume = [False]*CRY_VOLUME_SIZE
         self.attention_creature = self
         
 
@@ -78,10 +78,14 @@ class Creature:
     
     def update(self) -> list["Creature"] | str | None:
 
-        for cry in self.cry_volume:
-            self.grid.crying_sound[self.traits.calls[cry]] += 1
-
+        # 뇌
         if self.traits.brain_max_nodeInx:
+            for i in range(CRY_VOLUME_SIZE):
+                if not self.cry_volume[i]:
+                    continue
+                
+                self.grid.crying_sound[0][self.traits.calls[i]] += 1
+
             InputNodes, visual_creatures = sense_environment(
                 creature= self,
                 count= self.traits.visible_entities,
@@ -99,6 +103,7 @@ class Creature:
 
             actions_environment(self, self.brain_nodes, self.traits.brain_output_synapses, visual_creatures)
         
+        # 에너지
         self.energy -= self.traits.BMR
         if self.eat_intent:
             if self.traits.food_intake == 0: #태양에너지.
@@ -114,6 +119,7 @@ class Creature:
                     self.energy     += self.traits.actual_intake
                     self.grid.organics[self.traits.food_intake] -= self.traits.intake_rates
 
+        # 근접
         neighbor_creatures = self.find_creatures_within(self.traits.size/2)
         
         for creature in neighbor_creatures:
@@ -123,6 +129,9 @@ class Creature:
                 creature.health -= self.traits.attack_power
                 self.health -= creature.traits.retaliation_damage
                 self.energy -= self.traits.attack_cost
+
+        #체력
+        self.health += self.traits.BMR*RECOVERY_RATE
 
         # 죽음
         if (self.energy < self.traits.energy_reserve*0.3 or 

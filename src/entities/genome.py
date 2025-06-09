@@ -3,6 +3,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from src.utils.datatypes    import Genes
+from src.utils.constants    import *
 from src.utils.math_utils   import apply_weight_or_default, apply_weight_or_default_int, list_apply_weight, list_apply_weight_and_pad, apply_weights_with_flag
     
 import numpy as np
@@ -37,7 +38,7 @@ class Genome:
         
         ('mutation_intensity',          0, apply_weight_or_default,    (0.005,      0.5,     1)),
         ('reproductive_mode',           0, apply_weight_or_default_int,(0.005,      0,       1)),
-        ('calls',                       1, list_apply_weight_and_pad,  (0,          0,     999,10)),#TODO IndexError 발생. 1000 -> 999 조정. 테스트 필요.
+        ('calls',                       1, list_apply_weight_and_pad,  (0,          0,     999, CRY_VOLUME_SIZE)),#TODO IndexError 발생. 1000 -> 999 조정. 테스트 필요.
         ('species_color_rgb',           1, list_apply_weight_and_pad,  (0.005,      0,       1, 6)),
         ('offspring_energy_share',      0, apply_weight_or_default,    (0.05,     0.3,     0.5)),
         ('offspring_count',             0, apply_weight_or_default_int,(0.01,       2,     100, 1)),

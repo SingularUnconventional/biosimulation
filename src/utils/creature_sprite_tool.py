@@ -154,16 +154,16 @@ def generate_creature_sheet(lines=[], tile_size=16):
             sheet_img.paste(img, (idx * tile_size, 0), img)
             size_file.write(f"{gene['size']:.3f}\n")
 
-            if i % 100 == 0:
-                ratio = i / new_count
-                percent = ratio * 100
-                bar_len = 50
-                passed = "=" * int(ratio * bar_len)
-                remaining = "-" * (bar_len - len(passed))
-                print(f"| {i}/{new_count} | {percent:.1f}% {passed}>{remaining}", end='\r')
+            # if i % 100 == 0:
+            #     ratio = i / new_count
+            #     percent = ratio * 100
+            #     bar_len = 50
+            #     passed = "=" * int(ratio * bar_len)
+            #     remaining = "-" * (bar_len - len(passed))
+            #     print(f"| {i}/{new_count} | {percent:.1f}% {passed}>{remaining}", end='\r')
 
     sheet_img.save(IMAGE_PATH)
-    print(f"✅ 저장 완료: {IMAGE_PATH} ({start_idx} → {start_idx + new_count})                           ")
+    #print(f"✅ 저장 완료: {IMAGE_PATH} ({start_idx} → {start_idx + new_count})                           ")
 
 
 from PIL import Image

@@ -32,7 +32,7 @@ BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (K
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
 DIGESTIVE_EFFICIENCY_BASELINE   = 0.5						    # 소화 효율 기준값
-FOOD_DIGESTION_COSTS            = [30, 80, 90, 100, 800]     # 음식 종류별 대사 비용 계수
+FOOD_DIGESTION_COSTS            = [30, 30, 30, 30, 30]     # 음식 종류별 대사 비용 계수
 
 # 감각 / 인지
 BRAIN_ENERGY_COST               = 0.00005	# 뇌 시냅스 및 연산 비용
@@ -62,5 +62,7 @@ ENERGY_RESERVE_MUSCLE_MULTIPLIER= 0.5      # 근밀도가 에너지 저장량에
 ENERGY_RESERVE_SKIN_MULTIPLIER  = 0.1      # 피부 두께가 에너지 저장량에 미치는 영향
 ENERGY_RESERVE_MULTIPLIER       = 10000   # 전체적인 에너지 저장량
 
-#물리.
+
 CRUSH_DAMAGE_PER_SIZE = 100  # 압사 데미지 계수
+CRY_VOLUME_SIZE = 10 #한 개체가 낼 수 있는 소리 한계
+RECOVERY_RATE = 1 #회복계수

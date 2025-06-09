@@ -67,7 +67,7 @@ def sense_environment(
 
     # === 3. 청각 감지 ===
     if 'audio' in active_senses:
-        results['audio_heard'] = creature.grid.crying_sound  # dict[int] or list[float]
+        results['audio_heard'] = creature.grid.crying_sound[1]  # dict[int] or list[float]
 
     # === 4. 주의 감지 ===
     if 'attention' in active_senses and attention_creature is not None:

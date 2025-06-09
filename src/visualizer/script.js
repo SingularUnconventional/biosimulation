@@ -300,7 +300,7 @@ function render() {
 
 // === 프레임 업데이트 ===
 async function update() {
-  if (state.isPlaying && state.currentFrame <= state.totalFrames) {
+  if (state.currentFrame <= state.totalFrames) {
     const { filename, start, end } = findFileForFrame(state.currentFrame);
     const frameIndex = state.currentFrame - start;
 
@@ -332,11 +332,12 @@ async function update() {
       state.isPlaying = false;
       return;
     }
-
-    state.currentFrame++;
-    preloadNextFiles(state.currentFrame);
+    if(state.isPlaying){
+      state.currentFrame++;
+    }
   }
-
+  
+  preloadNextFiles(state.currentFrame);
   render();
   updateInfoBox();
 

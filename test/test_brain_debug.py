@@ -31,5 +31,5 @@ def extract_creatures_with_brain_nodes(log_file_path: str):
 
 creatures = extract_creatures_with_brain_nodes("logs/turn_logs.jsonl")
 print(f"Found {len(creatures)} creatures with brain_nodes")
-print(creatures)
+print([(creature['id'], creature['x'], creature['y']) for creature in creatures])
 #2419, 1075,1053

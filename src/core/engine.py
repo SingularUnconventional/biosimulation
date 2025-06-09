@@ -34,7 +34,7 @@ class World:
         for _ in range(CREATURES_SIZE):
             pos = Vector2(np.random.uniform(GRID_WIDTH_SCALE*WORLD_WIDTH_SCALE), np.random.uniform(GRID_HIGHT_SCALE*WORLD_HIGHT_SCALE))
             gridPos = get_grid_coords(pos)
-            creature = Creature(pos, np.random.randint(0, 256, 150, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
+            creature = Creature(pos, np.random.randint(0, 256, 1500, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
             self.world[gridPos.y][gridPos.x].creatures.add(creature)
             self.logs.register_creature({creature})
 
@@ -62,8 +62,8 @@ class World:
     def Trun(self):
         for yGrid in self.world:
             for grid in yGrid:
-                grid.turn()#TODO 적절한 초기화 지점 선정 필요. 울음소리가 객체들에게 전달된 다음 초기화. 이후 객체들의 울음.
                 grid.process_creatures(self)
+                grid.turn()
                 #grid.organics.regenerate()
         self.logs.log_turn()
         #print(self.time)
@@ -83,10 +83,11 @@ class Grid:
         #     for i in range(NUM_ORGANIC)
         # ])
 
-        self.crying_sound = [0]*1000
+        self.crying_sound = [[0 for _ in range(1000)] for _ in range(2)]
 
     def turn(self):
-        self.crying_sound = [0]*1000
+        self.crying_sound[1] = self.crying_sound[0] #말하기 채널 값을 듣기 채널로 이동.
+        self.crying_sound[0] = [0]*1000             #말하기 채널 초기화.
         
     def process_creatures(self, world: World):
         creature_spawn_queue = set()

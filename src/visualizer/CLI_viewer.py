@@ -1,99 +1,77 @@
 from src.core.engine        import World
+from src.entities.organism import Creature
 from src.utils.constants    import *
-from dataclasses import asdict
+
+import threading
+import time
+import sys
+from time import time, strftime, localtime
+from colorama import Fore, Style
+
 class Viewer:
-	def __init__(self, world : World):
-		self.world = world
-		self.count = 0
-		self.texture = {
-			"background": "  ",
-			"block" 	: "⬜️",
-			"food" 		: "🟩",
-			"creature" 	: "🟦🟪⬜🟨🟧🟥",
-		}
+    def __init__(self, world: World):
+        self.world = world
+        self.count = 0
+        self.start_time = time()
+        self.creature_count = 0
+        self.running = True
+        self.paused = False
+        self.command = ""
+        self.last_rendered_lines = 0
 
-		self.creatureColorExpression = len(self.texture["creature"])-1
+        threading.Thread(target=self.read_input, daemon=True).start()
 
-		self.scNumber = 0
-		self.passcount = 0
-	def step(self):
-		self.count += 1
-		if self.count < self.passcount:
-			ratio = self.count / self.passcount
-			percent = ratio * 100
-			bar_len = 50
-			passed = "=" * int(ratio * bar_len)
-			remaining = "-" * (bar_len - len(passed))
-			print(f"| {self.count}/{self.passcount} | {percent:.1f}% {passed}>{remaining}", end='\r')
-			return
-		import os
-		# if os.name == 'nt':  # Windows
-		# 	os.system('cls')
-		# else:  # Linux, macOS 등
-		# 	os.system('clear')
-		creatures = list(set().union(*[
-			set().union(*[
-				self.world.world[y][x].creatures 
-				for x in range(WORLD_WIDTH_SCALE)]) 
-				for y in range(WORLD_HIGHT_SCALE)]))
-		
-		
-		# for i, creature in enumerate(creatures):
-		# 	if creature.id == 11776:
-		# 		self.scNumber = i
+    def read_input(self):
+        while self.running:
+            try:
+                self.command = input().strip().lower()
+                if self.command == "s":
+                    self.paused = False
+                elif self.command == "p":
+                    self.paused = True
+                elif self.command == "e":
+                    self.running = False
+                else:
+                    print("알 수 없는 명령어입니다.")
+            except EOFError:
+                continue
 
-		print('Trun:', self.count, '\tsize:', len(creatures))
-		# print('%-25s' % 'id', creatures[self.scNumber].id)
-		# for name, trait in asdict(creatures[self.scNumber].traits).items():
-		# 	print('%-25s' % name, trait)
-		# print('%-25s' % 'energy', creatures[self.scNumber].energy)
-		# print('%-25s' % 'Pos', f"x={creatures[self.scNumber].position.x:.3f} y={creatures[self.scNumber].position.y:.3f}")
-		# print('%-25s' % 'GridPos', f"x={creatures[self.scNumber].grid.pos.x} y= {creatures[self.scNumber].grid.pos.y}")
-		# for yGrid in self.world.world:
-		# 	for Grid in yGrid:
-		# 		print(f"{Grid.organics.current_amounts[0]:.0f}", end=' ')
-		# 	print()
-		commend = input()
-		if commend:
-			if commend.isnumeric():
-				self.passcount = int(commend)
-			elif commend == 'save log':
-				self.world.logs.save_logs()
-			elif commend == 'exit':
-				exit()
+    def step(self):
+        if not self.running:
+            exit()
+        if self.paused:
+            return
 
-	def _step(self):
-		print(self._printworld())
-		print(self.texture["background"]*(WORLD_WIDTH_SCALE+2), end='\r')
-		commend = input()
+        self.count += 1
 
-		print("\033[F"*(WORLD_HIGHT_SCALE+4))
+        # 100턴마다 개체 수 갱신
+        if self.count % 100 == 0:
+            creature_set = set()
+            for y in range(WORLD_HIGHT_SCALE):
+                for x in range(WORLD_WIDTH_SCALE):
+                    creature_set.update(self.world.world[y][x].creatures)
+            self.creature_count = len(creature_set)
 
-		if commend != '':
-			print(self.texture["background"]*(WORLD_WIDTH_SCALE+2), end='\r')
-			try:
-				print(commend)
-				print(self.texture["background"]*(WORLD_WIDTH_SCALE+2), end='\r')
-				print(eval(commend))
-			except Exception as e:
-				print("\033[31mfailed:", e, "\033[0m")
-		
-		
-	def _printworld(self):
-		grid = [[self.texture["background"]
-				for _ in range(WORLD_WIDTH_SCALE)]
-				for _ in range(WORLD_HIGHT_SCALE)]
-		
-		for creature in self.world.creatures:
-			yPos = int(creature.position.y % WORLD_HIGHT_SCALE)
-			xPos = int(creature.position.x % WORLD_WIDTH_SCALE)
-			
-			grid[yPos][xPos] = self.texture["creature"][int((self.creatureColorExpression*creature.energy)/(creature.energy+1000))]
+        # 정보 계산
+        elapsed = time() - self.start_time
+        speed = self.count / elapsed if elapsed > 0 else 0
 
-		for food in self.world.foods:
-			yPos = int(food.position.y)
-			xPos = int(food.position.x)
-			
-			grid[yPos][xPos] = self.texture["food"]
+        # 이전 출력 제거
+        if self.last_rendered_lines:
+            print("\033[F" * (self.last_rendered_lines+1), end="")
 
-		return self.texture["block"]*(WORLD_WIDTH_SCALE+2)+"\n"+"\n".join([self.texture["block"] + "".join(x_line) + self.texture["block"] for x_line in grid])+"\n"+self.texture["block"]*(WORLD_WIDTH_SCALE+2)
+        # 정보 출력
+        lines = [
+            f"{Fore.LIGHTBLACK_EX}┌─ Simulation Status──────────────────────────────────────────────────────────────────{Style.RESET_ALL}",
+            f"│ Step: {Fore.LIGHTWHITE_EX}{self.count:5}{Style.RESET_ALL}  "
+            f"Unique Creatures: {Fore.CYAN}{self.creature_count:5}{Style.RESET_ALL}  "
+            f"Speed: {Fore.YELLOW}{speed:6.2f} steps/sec{Style.RESET_ALL}  "
+            f"Elapsed: {Fore.GREEN}{elapsed:6.1f}s{Style.RESET_ALL}    ",
+            f"{Fore.LIGHTBLACK_EX}└─────────────────────────────────────────────────────────────────────────────────────{Style.RESET_ALL}"
+        ]
+        for line in lines:
+            print(line)
+
+        print(f" command - s(start) / p(pause) / e:(exit)", flush=True)
+
+        self.last_rendered_lines = len(lines)
