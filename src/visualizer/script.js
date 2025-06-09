@@ -6,7 +6,7 @@ canvas.height = window.innerHeight - 40;
 
 const CONFIG = {
   GRID_SIZE: 40,
-  ORGANIC_ENERGY_SCALE: 30000000.0,
+  ORGANIC_ENERGY_SCALE: 3000000000.0,
   CREATURE_RADIUS: 1,
   FRAMES_PER_FILE: 100,
   LOG_DIR: "/logs/compressed/",

@@ -13,7 +13,7 @@ class World:
     def __init__(self):
         self.time = 0
 
-        self.solar_conversion_bonus = 5000000000
+        self.solar_conversion_bonus = 5000
 
         organics_noise = generate_noise_field(
             shape=(WORLD_WIDTH_SCALE, WORLD_HIGHT_SCALE),
@@ -62,6 +62,7 @@ class World:
     def Trun(self):
         for yGrid in self.world:
             for grid in yGrid:
+                grid.turn()#TODO 적절한 초기화 지점 선정 필요. 울음소리가 객체들에게 전달된 다음 초기화. 이후 객체들의 울음.
                 grid.process_creatures(self)
                 #grid.organics.regenerate()
         self.logs.log_turn()
@@ -125,7 +126,9 @@ class Grid:
             self.corpses.discard(corpse)
 
         for offspring in creature_spawn_queue:
+            offspring.move() #TODO 공간 벗어남 문제 임시 해결. x추가 후 삭제.
             c = get_grid_coords(offspring.position)
             world.world[c.y][c.x].creatures.add(offspring)
+            offspring.grid = world.world[c.y][c.x]
 
         world.logs.register_creature(creature_spawn_queue)

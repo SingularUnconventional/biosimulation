@@ -52,8 +52,6 @@ class Creature:
         self.id = Creature._id_counter  # 고유 ID 부여
         Creature._id_counter += 1       # 다음 ID 준비
 
-        self.move()
-
     def __hash__(self):
         return hash(self.id)
 
@@ -116,8 +114,12 @@ class Creature:
                     self.energy     += self.traits.actual_intake
                     self.grid.organics[self.traits.food_intake] -= self.traits.intake_rates
 
-        if self.attack_intent:
-            for creature in self.find_creatures_within(self.traits.size):
+        neighbor_creatures = self.find_creatures_within(self.traits.size/2)
+        
+        for creature in neighbor_creatures:
+            creature.health -= self.traits.size*CRUSH_DAMAGE_PER_SIZE
+
+            if self.attack_intent:
                 creature.health -= self.traits.attack_power
                 self.health -= creature.traits.retaliation_damage
                 self.energy -= self.traits.attack_cost
@@ -144,7 +146,7 @@ class Creature:
         if (new_position.x < 0 or 
             new_position.y < 0 or 
             new_position.x >= WORLD_WIDTH_SCALE*GRID_WIDTH_SCALE or 
-            new_position.y >= WORLD_HIGHT_SCALE*GRID_HIGHT_SCALE): #임시. 차후 테두리는 생존 불가능 구역으로 설정하여 문제 해결.
+            new_position.y >= WORLD_HIGHT_SCALE*GRID_HIGHT_SCALE): #TODO 임시. 차후 테두리는 생존 불가능 구역으로 설정하여 문제 해결.
             new_position = Vector2(WORLD_WIDTH_SCALE*GRID_WIDTH_SCALE/2, WORLD_HIGHT_SCALE*GRID_HIGHT_SCALE/2)
             
         self.position = new_position
