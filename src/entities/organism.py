@@ -34,15 +34,18 @@ class Creature:
         self.health         : float     = self.traits.health
         self.energy         : float     = self.traits.initial_offspring_energy
         self.life_start_time: int       = world.time
-        self.brain_nodes    : np.ndarray= np.zeros((self.traits.brain_max_nodeInx+1, 3))
+        if self.traits.brain_max_nodeInx:
+            self.brain_nodes: np.ndarray= np.zeros((self.traits.brain_max_nodeInx+1, 3))
+        else:
+            self.brain_nodes: np.ndarray= np.array([])
 
-        self.move_speed = 1
+        self.move_speed = 0
         self.move_dir_x = np.random.uniform(-1, 1)
         self.move_dir_y = np.random.uniform(-1, 1)
-        self.attack_intent = 1
-        self.reproduce_intent = 1
-        self.eat_intent = 1
-        self.cry_volume = [0 for _ in range(10)]
+        self.attack_intent = True
+        self.reproduce_intent = True
+        self.eat_intent = True
+        self.cry_volume = [False for _ in range(10)]
         self.attention_creature = self
         
 
@@ -76,21 +79,27 @@ class Creature:
         return [others[i] for i in valid_indices]
     
     def update(self) -> list["Creature"] | str | None:
-        if self.brain_nodes != []:
-            InputNodes = sense_environment(
+
+        for cry in self.cry_volume:
+            self.grid.crying_sound[self.traits.calls[cry]] += 1
+
+        if self.traits.brain_max_nodeInx:
+            InputNodes, visual_creatures = sense_environment(
                 creature= self,
                 count= self.traits.visible_entities,
                 range_level= self.traits.auditory_range,
                 attention_creature= self.attention_creature,
                 active_senses= self.traits.brain_input_key_set,
                 slot_map= self.traits.brain_input_synapses)
-            
-            for k, v in InputNodes.items():
-                self.brain_nodes[k][0] = v
 
-            self.brain_nodes = brain_calculation(self.brain_nodes, self.traits.brain_compute_cycles)
 
-            actions_environment(self, self.brain_nodes, self.traits.brain_output_synapses)
+            for _ in range(self.traits.brain_compute_cycles):
+                for k, v in InputNodes.items():
+                    self.brain_nodes[k][0] = v
+
+                self.brain_nodes = brain_calculation(self.brain_nodes, self.traits.brain_synapses)
+
+            actions_environment(self, self.brain_nodes, self.traits.brain_output_synapses, visual_creatures)
         
         self.energy -= self.traits.BMR
         if self.eat_intent:
@@ -107,11 +116,11 @@ class Creature:
                     self.energy     += self.traits.actual_intake
                     self.grid.organics[self.traits.food_intake] -= self.traits.intake_rates
 
-            if self.attack_intent:
-                for creature in self.find_creatures_within(self.traits.size/2):
-                    creature.health -= self.traits.attack_power
-                    self.health -= creature.traits.retaliation_damage
-                    creature.energy -= self.traits.attack_cost
+        if self.attack_intent:
+            for creature in self.find_creatures_within(self.traits.size):
+                creature.health -= self.traits.attack_power
+                self.health -= creature.traits.retaliation_damage
+                self.energy -= self.traits.attack_cost
 
         # 죽음
         if (self.energy < self.traits.energy_reserve*0.3 or 
@@ -123,13 +132,14 @@ class Creature:
             return self.breed()
 
         # 이동
-        if self.traits.speed == 0 or self.traits.speed == 0: return None
+        if (not self.move_speed) or (not self.traits.speed): return None
 
         return self.move()
         
 
     def move(self):
         new_position = Vector2(self.move_dir_x, self.move_dir_y)*self.traits.speed*self.move_speed + self.position
+        self.energy -= self.move_speed * self.traits.move_cost
     
         if (new_position.x < 0 or 
             new_position.y < 0 or 

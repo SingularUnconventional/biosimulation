@@ -82,7 +82,10 @@ class Grid:
         #     for i in range(NUM_ORGANIC)
         # ])
 
-        self.crying_sound = [0 for _ in range(1000)]
+        self.crying_sound = [0]*1000
+
+    def turn(self):
+        self.crying_sound = [0]*1000
         
     def process_creatures(self, world: World):
         creature_spawn_queue = set()

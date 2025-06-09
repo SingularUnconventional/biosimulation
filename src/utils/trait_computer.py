@@ -35,11 +35,13 @@ def compute_biological_traits(genes:Genes) -> Traits:
 
     # 전투 계산
     attack_power        = (genes.muscle_density + genes.attack_organ_power) * genes.size
-    attack_cost         = BMR * ATTACK_COST_RATIO
+    attack_cost         = BMR * ATTACK_COST_RATIO * attack_power
+
     retaliation_damage  = genes.size * genes.retaliation_damage_ratio
 
     # 이동 속도 계산
     speed               = SPEED_BASE * genes.limb_length_factor * ((genes.muscle_density / genes.size) ** SPEED_MASS_INFLUENCE)
+    move_cost           = BMR * SPEED_COST_RATIO * speed
 
     # 수명 계산
     lifespan            = LIFESPAN_SCALE * (genes.size / BMR)
@@ -60,37 +62,40 @@ def compute_biological_traits(genes:Genes) -> Traits:
     #실제 에너지 섭취량
     actual_intake = intake_rates * genes.digestive_efficiency
 
-    if genes.brain_synapses != []:
+    if genes.brain_synapses:
         #작동 뉴런 계산
         brain_synapses = filter_reachable_loads(INPUT_INDICES.keys(), OUTPUT_INDICES.keys(), genes.brain_synapses)
-        arr = np.array(brain_synapses)
-        brain_max_nodeInx = int(np.max(arr[:, 0]))
 
-        #작동 입출력 뉴런
+        if brain_synapses:
+            arr = np.array(brain_synapses)
+            brain_max_nodeInx = int(np.max(arr[:, 0]))
 
-        input_keys_set = set(INPUT_INDICES.keys())
-        output_keys_set = set(OUTPUT_INDICES.keys())
+            #작동 입출력 뉴런
 
-        brain_input_synapses = {
-            key: INPUT_INDICES[key]
-            for key in map(int, brain_synapses[:, 0])
-            if key in input_keys_set
-        }
-        brain_output_synapses = {
-            key: OUTPUT_INDICES[key]
-            for key in map(int, brain_synapses[:, 0])
-            if key in output_keys_set
-        }
+            input_keys_set = set(INPUT_INDICES.keys())
+            output_keys_set = set(OUTPUT_INDICES.keys())
 
-        brain_input_key_set = {v[0] for v in brain_input_synapses.values()}
-        brain_output_key_set = {v[0] for v in brain_output_synapses.values()}
+            brain_input_synapses = {
+                key: INPUT_INDICES[key]
+                for key in map(int, arr[:, 0])
+                if key in input_keys_set
+            }
+            brain_output_synapses = {
+                key: OUTPUT_INDICES[key]
+                for key in map(int, arr[:, 0])
+                if key in output_keys_set
+            }
 
-        traits.brain_max_nodeInx		   = brain_max_nodeInx
-        traits.brain_input_synapses	   = brain_input_synapses
-        traits.brain_output_synapses	   = brain_output_synapses
-        traits.brain_input_key_set      = brain_input_key_set
-        traits.brain_output_key_set     = brain_output_key_set
-    
+            brain_input_key_set = {v[0] for v in brain_input_synapses.values()}
+            brain_output_key_set = {v[0] for v in brain_output_synapses.values()}
+
+            traits.brain_max_nodeInx		   = brain_max_nodeInx
+            traits.brain_input_synapses	   = brain_input_synapses
+            traits.brain_output_synapses	   = brain_output_synapses
+            traits.brain_input_key_set      = brain_input_key_set
+            traits.brain_output_key_set     = brain_output_key_set
+            traits.brain_synapses            = brain_synapses
+        
 
     traits.size                      = genes.size
     traits.digestive_efficiency      = genes.digestive_efficiency
@@ -113,6 +118,7 @@ def compute_biological_traits(genes:Genes) -> Traits:
     traits.health                    = health
     traits.attack_power              = attack_power
     traits.attack_cost               = attack_cost
+    traits.move_cost                 = move_cost
     traits.retaliation_damage        = retaliation_damage
     traits.speed                     = speed
     traits.lifespan                  = lifespan
@@ -120,7 +126,6 @@ def compute_biological_traits(genes:Genes) -> Traits:
     traits.initial_offspring_energy  = initial_offspring_energy
     traits.intake_rates			   = intake_rates
     traits.actual_intake			   = actual_intake
-    traits.brain_synapses            = brain_synapses
     
 
     return traits

@@ -33,11 +33,11 @@ class Genome:
                                                                        (1000000,   10, 1000000), 
                                                                        (0,         -5,       0))),
 
-        ('brain_compute_cycles',        0, apply_weight_or_default,    (1,          1,    1000)),
+        ('brain_compute_cycles',        0, apply_weight_or_default_int,(0.1,        1,    1000)),
         
         ('mutation_intensity',          0, apply_weight_or_default,    (0.005,      0.5,     1)),
         ('reproductive_mode',           0, apply_weight_or_default_int,(0.005,      0,       1)),
-        ('calls',                       1, list_apply_weight,          (1,        100,  100000)),
+        ('calls',                       1, list_apply_weight_and_pad,  (1,          1,    1000,10)),
         ('species_color_rgb',           1, list_apply_weight_and_pad,  (0.005,      0,       1, 6)),
         ('offspring_energy_share',      0, apply_weight_or_default,    (0.05,     0.3,     0.5)),
         ('offspring_count',             0, apply_weight_or_default_int,(0.01,       2,     100, 1)),

@@ -3,6 +3,7 @@ import json
 import base64
 import zstandard as zstd
 from dataclasses import asdict
+import numpy as np
 
 from src.utils.creature_sprite_tool import generate_creature_sheet, reset_creature_sheet
 
@@ -54,8 +55,11 @@ class WorldLog:
 
             self.static_creature_data.clear()
 
-    def fast_round(self, v, scale=10000):
+    def fast_round_scalar(self, v: float, scale: int = 10000) -> float:
         return int(v * scale) / scale
+    
+    def fast_round_array(self, v_array: np.ndarray, scale: int = 10000) -> np.ndarray:
+        return np.floor(v_array * scale + 0.5) / scale
 
     def log_turn(self):
         """매 턴마다 로그를 기록 (리스트 기반 구조)"""
@@ -64,21 +68,22 @@ class WorldLog:
             [  # grids
                 [  # each row
                     [  # each grid: [organics, creatures]
-                        [self.fast_round(v) for v in grid.organics],  # [float]
+                        [self.fast_round_scalar(v) for v in grid.organics],  # [float]
                         [  # creatures
                             [  # each creature: [id, x, y, health, energy]
                                 creature.id,
-                                self.fast_round(creature.position.x),
-                                self.fast_round(creature.position.y),
-                                self.fast_round(creature.health),
-                                self.fast_round(creature.energy)
+                                self.fast_round_scalar(creature.position.x),
+                                self.fast_round_scalar(creature.position.y),
+                                self.fast_round_scalar(creature.health),
+                                self.fast_round_scalar(creature.energy),
+                                self.fast_round_array(creature.brain_nodes).tolist()
                             ] for creature in grid.creatures
                         ],
                         [   #corpses
                             [  # each creature: [x, y, energy]
-                                self.fast_round(corpse.position.x),
-                                self.fast_round(corpse.position.y),
-                                self.fast_round(corpse.energy)
+                                self.fast_round_scalar(corpse.position.x),
+                                self.fast_round_scalar(corpse.position.y),
+                                self.fast_round_scalar(corpse.energy)
                             ] for corpse in grid.corpses
                         ]
                     ] for grid in row

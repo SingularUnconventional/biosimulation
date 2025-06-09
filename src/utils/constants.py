@@ -48,10 +48,11 @@ SKIN_THICKNESS_ENERGY_COST      = 0.1	    # 피부 두께에 따른 비용
 ATTACK_ORGAN_ENERGY_COST        = 0.015	    # 공격 기관 파괴력에 따른 비용
 
 # 체력, 공격, 속도, 수명
-BASE_HEALTH                     = 100.0
-SIZE_HEALTH_MULTIPLIER          = 2.0
-SKIN_HEALTH_MULTIPLIER          = 10.0
+BASE_HEALTH                     = 1000.0
+SIZE_HEALTH_MULTIPLIER          = 2000.0
+SKIN_HEALTH_MULTIPLIER          = 1000.0
 ATTACK_COST_RATIO               = 0.007
+SPEED_COST_RATIO                = 0.007
 SPEED_BASE                      = 0.05
 SPEED_MASS_INFLUENCE            = 0.4
 LIFESPAN_SCALE                  = 5000.0

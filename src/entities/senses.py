@@ -17,6 +17,7 @@ def sense_environment(
 
     cpos = creature.position
     results = {}
+    visual_creatures = [creature] #집중 개체의 인덱스를 확인하기 위해 생성한 특수 인자.
 
     # === 1. food 감지 ===
     if 'food' in active_senses:
@@ -44,7 +45,8 @@ def sense_environment(
                 (dx := other.position.x - cpos.x) ** 2 +
                 (dy := other.position.y - cpos.y) ** 2,
                 dx, dy,
-                other.traits.size
+                other.traits.size,
+                other
             )
             for other in search_set
             if other is not creature
@@ -53,10 +55,11 @@ def sense_environment(
         top_n = heapq.nsmallest(count, candidates)
 
         if top_n:
-            _, dxs, dys, sizes = zip(*top_n)
+            _, dxs, dys, sizes, creatures = zip(*top_n)
             results['detected_pos_x'] = list(dxs)
             results['detected_pos_y'] = list(dys)
             results['detected_size'] = list(sizes)
+            visual_creatures += list(creatures)
         else:
             results['detected_pos_x'] = []
             results['detected_pos_y'] = []
@@ -80,9 +83,9 @@ def sense_environment(
             'focus_hunger': [attention_creature.energy]
         })
 
-    print("=== DEBUG: audio_heard in results ===")
-    print(results.get('audio_heard'))
-    print(type(results.get('audio_heard')))
+    #print("=== DEBUG: audio_heard in results ===")
+    #print(results.get('audio_heard'))
+    #print(type(results.get('audio_heard')))
 
     # === 5. slot_map에 따라 필요한 값만 추출 ===
     output = {}
@@ -99,4 +102,4 @@ def sense_environment(
         else:
             output[slot] = 0
 
-    return output
+    return output, visual_creatures

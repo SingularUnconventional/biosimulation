@@ -13,6 +13,7 @@ from flask import Flask, jsonify, send_file, send_from_directory, abort, Respons
 from pathlib import Path
 from dataclasses import asdict
 import zstandard as zstd
+import numpy as np
 import json
 import base64
 import io
@@ -49,6 +50,21 @@ def load_offset_index():
     except FileNotFoundError:
         print("❌ offsets.bin 파일이 존재하지 않습니다.")
         return []
+
+
+def convert_ndarray_and_set(obj):
+    if isinstance(obj, dict):
+        return {
+            k: convert_ndarray_and_set(v)
+            for k, v in obj.items()
+        }
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, set):
+        return list(obj)
+    else:
+        return obj
+
 
 # === 라우터 ===
 @app.route('/')
@@ -92,6 +108,7 @@ def serve_gene(object_id):
             line = f.readline().decode("utf-8").strip()
             raw_bytes = base64.b64decode(line)
             interpreted = asdict(compute_biological_traits(Genome(raw_bytes).traits))
+            interpreted = convert_ndarray_and_set(interpreted)
             return jsonify(interpreted)
     except Exception as e:
         abort_with_log(500, f"유전자 처리 중 오류 발생: {e}")

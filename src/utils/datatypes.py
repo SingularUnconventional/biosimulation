@@ -84,6 +84,7 @@ class Traits:
 	health					: float			= None
 	attack_power			: float			= None
 	attack_cost				: float			= None
+	move_cost				: float			= None
 	retaliation_damage		: float			= None
 	speed					: float			= None
 	lifespan				: float			= None
