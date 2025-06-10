@@ -21,7 +21,7 @@ class Genome:
         ('skin_thickness',              0, apply_weight_or_default,    (0.01,     0.1,      50, 0.01)),
         ('attack_organ_power',          0, apply_weight_or_default,    (0.4,      0.1,     100)),
         ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),
-        ('food_intake',                 0, apply_weight_or_default_int,(0.02,       0,       4)),
+        ('food_intake',                 0, apply_weight_or_default_int,(0.05,       0,       4)),
         ('intake_rates',                0, apply_weight_or_default,    (0.005,   0.05,       1)),
         ('digestive_efficiency',        0, apply_weight_or_default,    (0.005,    0.5,       1, 0.1)),
 
@@ -36,6 +36,7 @@ class Genome:
 
         ('brain_compute_cycles',        0, apply_weight_or_default_int,(0.1,        1,    1000)),
         
+        ('crossover_cut_number',        0, apply_weight_or_default_int,(1,          3,     500)),
         ('mutation_intensity',          0, apply_weight_or_default,    (0.005,      0.5,     1)),
         ('reproductive_mode',           0, apply_weight_or_default_int,(0.005,      0,       1)),
         ('calls',                       1, list_apply_weight_and_pad,  (0,          0,     999, CRY_VOLUME_SIZE)),#TODO IndexError 발생. 1000 -> 999 조정. 테스트 필요.
@@ -140,9 +141,9 @@ class Genome:
         # 남은 바이트 붙이기 (랜덤한 부모 선택)
         child.extend(parent1[min_len:])
 
-        return self._apply_mutation(child, mutation_rate)
+        return self.apply_mutation(child, mutation_rate)
 
-    def _apply_mutation(self, gene_sequence, mutation_rate):
+    def apply_mutation(self, gene_sequence, mutation_rate):
         """유전자에 확률적으로 돌연변이 적용하여 새 바이트열 반환"""
         i = 0
         while i < len(gene_sequence):

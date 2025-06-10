@@ -75,7 +75,7 @@ def sense_environment(
             'focus_pos_x': [attention_creature.position.x],
             'focus_pos_y': [attention_creature.position.y],
             'focus_size': [attention_creature.traits.size],
-            'focus_similarity': [1],
+            'focus_similarity': [creature.get_species_similarity(attention_creature)],
             'focus_diet_type': [attention_creature.traits.food_intake],
             'focus_health': [attention_creature.health],
             'focus_color_saturation': [attention_creature.traits.species_color_rgb[1]],

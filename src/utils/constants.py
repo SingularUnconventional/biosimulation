@@ -19,7 +19,7 @@ START_ORGANIC_RATES  = [1_000_000_000, 1_000_000_000, 1_000_000_000, 1_000_000_0
 #ORGANIC_GEN_RATE    = [0.1, 0.2, 0.3, 0.4]
 #ORGANIC_MAX_AMOUNT  = [250, 500, 750, 1000]
 
-ENERGY_INTAKE_RATES = [0.01, 0.2, 0.2, 0.2, 0.1]
+ENERGY_INTAKE_RATES = [0.01, 20, 20, 20, 200]
 DECAY_RETURN_ENERGY = [0.08, 0.08, 0.08, 0.08]
 
 #지형에 따른 부식률 노이즈 생성.
@@ -27,7 +27,7 @@ DECAY_RETURN_ENERGY = [0.08, 0.08, 0.08, 0.08]
 # ======== 개체 상수 ========
 
 # 대사량
-BASAL_METABOLIC_CONSTANT        = 0.02  						# 기초 대사량 계수
+BASAL_METABOLIC_CONSTANT        = 0.01  						# 기초 대사량 계수
 BASAL_METABOLIC_EXPONENT        = 0.75							# 질량 대비 대사량 지수 (Kleiber's law 기반)
 BASE_MULTIPLIER                 = 1.0							# BMR 기본 승수
 FOOD_EFFICIENCY_BMR_MULTIPLIER  = 1.5					        # 소화 효율이 BMR에 미치는 영향
@@ -51,6 +51,7 @@ ATTACK_ORGAN_ENERGY_COST        = 0.015	    # 공격 기관 파괴력에 따른 
 BASE_HEALTH                     = 1000.0
 SIZE_HEALTH_MULTIPLIER          = 2000.0
 SKIN_HEALTH_MULTIPLIER          = 1000.0
+ATTACK_RANGE_LIMB_RATIO         = 0.1
 ATTACK_COST_RATIO               = 0.007
 SPEED_COST_RATIO                = 0.007
 SPEED_BASE                      = 0.05

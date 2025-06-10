@@ -54,6 +54,7 @@ class Genes:
 	brain_synapses 			: list[list]	# 					뇌 시냅스 리스트 
 	brain_compute_cycles 	: int			# 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
 	
+	crossover_cut_number	: int			# 0 ~ 500			절단 지점 개수
 	mutation_intensity 		: float			# 0.0 ~ 1.0			돌연변이 강도 
 	reproductive_mode 		: bool			# 					생식 방식 (0: 무성, 1: 유성)
 	calls 					: list[int]		# 					울음소리 리스트
@@ -74,6 +75,7 @@ class Traits:
 
 	brain_compute_cycles 	: int			= None # 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
 	
+	crossover_cut_number	: int			= None # 0 ~ 500			절단 지점 개수
 	mutation_intensity 		: float			= None # 0.0 ~ 1.0			돌연변이 강도 
 	reproductive_mode 		: bool			= None # 					생식 방식 (0: 무성, 1: 유성)
 	calls 					: list[int]		= None # 					울음소리 리스트
@@ -82,6 +84,7 @@ class Traits:
 
 	BMR						: float			= None
 	health					: float			= None
+	attack_range			: float			= None
 	attack_power			: float			= None
 	attack_cost				: float			= None
 	move_cost				: float			= None
@@ -89,12 +92,23 @@ class Traits:
 	speed					: float			= None
 	lifespan				: float			= None
 	energy_reserve			: float			= None
+	all_initial_offspring_energy:float		= None
 	initial_offspring_energy: float			= None
 	intake_rates 			: float			= None	# 0.0 ~ 10000.0		시간당 음식 섭취량     
 	actual_intake			: float			= None
+	recovery_rate			: float			= None
+	crowding_pressure		: float			= None
 	brain_synapses 			: list[list]	= None # 					뇌 시냅스 리스트 
 	brain_max_nodeInx		: int			= None
 	brain_input_synapses	: list[int]   	= None
 	brain_output_synapses	: list[int]   	= None
 	brain_input_key_set		: set			= None
 	brain_output_key_set	: set			= None
+
+	size 					: float			= None # 0.01 ~ 100,000.0	신체 크기 (kg)
+	food_intake				: int			= None # 0 ~ 4				섭취 가능 음식
+
+	visual_resolution 		: int			= None # 0 ~ 4				시각 해상도(커질수록 상대의 정보 자세히 파악) 
+	auditory_range 			: int			= None # 0 ~ 10				청각 감지 반경 (grid) 
+	visible_entities 		: int			= None # 0 ~ 500			감지 가능한 생물 수 
+	species_color_rgb 		: list[int]		= None # 					종 유사도 표현 색상 (h, s, h, s)

@@ -1,3 +1,8 @@
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.entities.organism import Creature, Corpse
+
+
 import numpy as np
 from src.utils.constants import *
 from src.utils.datatypes import Vector2
@@ -127,3 +132,72 @@ def filter_reachable_loads(startIndexs, endIndexs, loads):
     ]
 
     return result
+
+def find_creatures_within(creature_self:'Creature', creatures:list['Creature'], max_distance: float) -> list['Creature']:
+    """같은 grid 내에서 자신을 제외하고 특정 거리 이하의 모든 개체를 반환"""
+    others = [c for c in creatures if c is not creature_self]
+    if not others:
+        return []
+
+    self_pos = np.array([creature_self.position.x, creature_self.position.y])
+    positions = np.array([[c.position.x, c.position.y] for c in others])
+
+    deltas = positions - self_pos
+    dists_sq = np.einsum("ij,ij->i", deltas, deltas)
+    max_dist_sq = max_distance ** 2
+
+    # 거리 제한 이하인 인덱스 필터링
+    valid_indices = np.where(dists_sq <= max_dist_sq)[0]
+
+    return [others[i] for i in valid_indices]
+
+def find_nearest_creature(creature_self:'Creature', creatures: list['Creature']):
+    """같은 grid 내에서 자신을 제외하고 가장 가까운 개체 하나를 반환"""
+    others = [c for c in creatures if c is not creature_self]
+    if not others:
+        return None
+
+    self_pos = np.array([creature_self.position.x, creature_self.position.y])
+    min_dist_sq = float('inf')
+    nearest = None
+
+    for c in others:
+        dx = c.position.x - self_pos[0]
+        dy = c.position.y - self_pos[1]
+        dist_sq = dx * dx + dy * dy
+        if dist_sq < min_dist_sq:
+            min_dist_sq = dist_sq
+            nearest = c
+
+    return nearest
+
+def find_nearest_corpse(creature_self: 'Creature', corpses: list['Corpse'], max_distance: float):
+    """주어진 범위 내에서 가장 가까운 시체를 반환"""
+    if not corpses:
+        return None
+
+    self_pos = np.array([creature_self.position.x, creature_self.position.y])
+    max_dist_sq = max_distance ** 2  # 거리 제곱으로 계산
+    min_dist_sq = float('inf')  # 가장 작은 거리의 제곱 값
+    nearest = None
+
+    for c in corpses:
+        dx = c.position.x - self_pos[0]
+        dy = c.position.y - self_pos[1]
+        dist_sq = dx * dx + dy * dy
+
+        # 만약 거리가 최대 범위 이하이고, 현재 거리보다 더 작은 거리라면
+        if dist_sq < min_dist_sq and dist_sq <= max_dist_sq:
+            min_dist_sq = dist_sq
+            nearest = c
+
+    return nearest
+
+
+def gene_similarity(a: str, b: str, length: int = 100) -> float:
+    """두 유전자 문자열 간 유사도 (0.0 ~ 1.0)"""
+    max_len = min(len(a), len(b), length)
+    if max_len == 0:
+        return 0.0
+    same = sum(1 for i in range(max_len) if a[i] == b[i])
+    return same / max_len

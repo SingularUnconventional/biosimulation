@@ -36,7 +36,8 @@ def compute_biological_traits(genes:Genes) -> Traits:
     # 전투 계산
     attack_power        = (genes.muscle_density + genes.attack_organ_power) * genes.size
     attack_cost         = BMR * ATTACK_COST_RATIO * attack_power
-
+    attack_range        = (genes.limb_length_factor*ATTACK_RANGE_LIMB_RATIO+1) * genes.size
+    
     retaliation_damage  = genes.size * genes.retaliation_damage_ratio
 
     # 이동 속도 계산
@@ -53,14 +54,22 @@ def compute_biological_traits(genes:Genes) -> Traits:
         genes.skin_thickness * ENERGY_RESERVE_SKIN_MULTIPLIER
     ) * ENERGY_RESERVE_MULTIPLIER
 
+    all_initial_offspring_energy = energy_reserve * genes.offspring_energy_share
+
     # 자식에게 줄 초기 에너지 계산
-    initial_offspring_energy = energy_reserve * genes.offspring_energy_share / genes.offspring_count
+    initial_offspring_energy = all_initial_offspring_energy / genes.offspring_count
 
     # 시간당 에너지 섭취량 계산
     intake_rates = genes.intake_rates * genes.size * ENERGY_INTAKE_RATES[genes.food_intake]
 
     #실제 에너지 섭취량
     actual_intake = intake_rates * genes.digestive_efficiency
+
+    #체력 회복량 계산
+    recovery_rate = BMR * RECOVERY_RATE
+
+    #군집 압력
+    crowding_pressure = genes.size*CRUSH_DAMAGE_PER_SIZE
 
     if genes.brain_synapses:
         #작동 뉴런 계산
@@ -108,6 +117,7 @@ def compute_biological_traits(genes:Genes) -> Traits:
 
     traits.brain_compute_cycles      = genes.brain_compute_cycles
     
+    traits.crossover_cut_number      = genes.crossover_cut_number
     traits.mutation_intensity        = genes.mutation_intensity
     traits.reproductive_mode         = genes.reproductive_mode
     traits.calls                     = genes.calls
@@ -116,6 +126,7 @@ def compute_biological_traits(genes:Genes) -> Traits:
 
     traits.BMR                       = BMR
     traits.health                    = health
+    traits.attack_range              = attack_range
     traits.attack_power              = attack_power
     traits.attack_cost               = attack_cost
     traits.move_cost                 = move_cost
@@ -123,9 +134,13 @@ def compute_biological_traits(genes:Genes) -> Traits:
     traits.speed                     = speed
     traits.lifespan                  = lifespan
     traits.energy_reserve            = energy_reserve
+    traits.all_initial_offspring_energy=all_initial_offspring_energy
     traits.initial_offspring_energy  = initial_offspring_energy
-    traits.intake_rates			   = intake_rates
-    traits.actual_intake			   = actual_intake
+    traits.intake_rates			     = intake_rates
+    traits.actual_intake			 = actual_intake
+    traits.recovery_rate             = recovery_rate
+    traits.crowding_pressure         = crowding_pressure
+
     
 
     return traits

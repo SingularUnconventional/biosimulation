@@ -205,22 +205,23 @@ function handleObjectSelection(screenX, screenY) {
 function updateInfoBox() {
   const sidebar = document.getElementById("sidebar");
   const latest = state.visibleCreatures.find(obj => obj.id === state.selectedObject?.id);
-
   if (!latest) {
-    sidebar.innerHTML = "<em>No object selected</em>";
+    sidebar.innerHTML = `<div class="info-empty">No object selected</div>`;
     return;
   }
 
   const lines = [
-    `<h3>Creature #${latest.id}</h3>`,
-    `<p><strong>HP:</strong> ${latest.hp.toFixed(2)}</p>`,
-    `<p><strong>Energy:</strong> ${latest.energy.toFixed(4)}</p>`,
-    `<p><strong>Position:</strong><br>X: ${latest.x.toFixed(2)}<br>Y: ${latest.y.toFixed(2)}</p>`,
+    `<div class="info-header">Creature #${latest.id}</div>`,
+    `<div class="info-row"><span class="label">HP</span><span class="value">${latest.hp.toFixed(2)}</span></div>`,
+    `<div class="info-row"><span class="label">Energy</span><span class="value">${latest.energy.toFixed(4)}</span></div>`,
+    `<div class="info-row"><span class="label">Position</span><span class="value">X: ${latest.x.toFixed(2)}<br>Y: ${latest.y.toFixed(2)}</span></div>`,
   ];
 
-  // 유전자 정보가 있으면 추가
   if (state.selectedObjectData) {
-    lines.push(`<pre><strong>Gene:</strong>\n${JSON.stringify(state.selectedObjectData, null, 2)}</pre>`);
+    lines.push(`<div class="info-section">
+      <div class="info-subtitle">Genome</div>
+      <pre class="gene-box">${JSON.stringify(state.selectedObjectData, null, 2)}</pre>
+    </div>`);
   }
 
   sidebar.innerHTML = lines.join("\n");
