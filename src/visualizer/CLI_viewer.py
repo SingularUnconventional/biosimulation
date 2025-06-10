@@ -6,7 +6,19 @@ import threading
 import time
 import sys
 from time import time, strftime, localtime
-from colorama import Fore, Style
+#from colorama import Fore, Style
+
+import os
+import logging
+
+# 로그 디렉토리 및 설정
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    filename="logs/simulation.log",
+    level=logging.INFO,
+    format="%(message)s",
+)
+logger = logging.getLogger(__name__)
 
 class Viewer:
     def __init__(self, world: World):
@@ -36,7 +48,34 @@ class Viewer:
             except EOFError:
                 continue
 
+
     def step(self):
+        self.count += 1
+
+        if self.count % 100 == 0:
+            # 유니크 개체 수 계산
+            creature_set = set()
+            for y in range(WORLD_HIGHT_SCALE):
+                for x in range(WORLD_WIDTH_SCALE):
+                    creature_set.update(self.world.world[y][x].creatures)
+            self.creature_count = len(creature_set)
+
+            # 시간 및 속도 계산
+            now = time()
+            elapsed = now - self.start_time
+            speed = self.count / elapsed if elapsed > 0 else 0
+            now_str = strftime("%Y-%m-%d %H:%M:%S", localtime(now))
+
+            # 로그 파일 기록
+            logger.info(
+                f"[{now_str}]  "
+                f"Step: {self.count:6d}  |  "
+                f"Unique: {self.creature_count:4d}  |  "
+                f"Speed: {speed:7.2f} steps/sec  |  "
+                f"Elapsed: {elapsed:6.1f}s"
+            )
+
+    def __step(self):
         if not self.running:
             exit()
         if self.paused:

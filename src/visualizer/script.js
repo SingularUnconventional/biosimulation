@@ -1,3 +1,27 @@
+console.log("✅ script.js loaded");
+
+try {
+  const canvas = document.getElementById("canvas");
+  console.log("✅ canvas found:", !!canvas);
+} catch (err) {
+  console.error("❌ canvas access failed", err);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  console.log("✅ DOMContentLoaded triggered");
+});
+
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+  console.error("🌋 Global Error:", msg, "at", url, "line", lineNo, "column", columnNo);
+};
+
+window.addEventListener('error', function (e) {
+  console.error("Global error:", e.message, e);
+});
+window.addEventListener('unhandledrejection', function (e) {
+  console.error("Unhandled Promise Rejection:", e.reason);
+});
+
 // === 캔버스 및 기본 설정 ===
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -59,9 +83,20 @@ function findFileForFrame(frame) {
 }
 
 async function fetchAndParseFile(filename) {
-  const res = await fetch(`${CONFIG.LOG_DIR}${filename}`);
-  const buf = await res.arrayBuffer();
-  return new TextDecoder("utf-8").decode(buf).trim().split("\n");
+  const url = `${CONFIG.LOG_DIR}${filename}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(`❌ fetch 실패 (${res.status}): ${url}`);
+      return null;
+    }
+    const buf = await res.arrayBuffer();
+    const text = new TextDecoder("utf-8").decode(buf);
+    return text.trim().split("\n");
+  } catch (e) {
+    console.error(`❌ 파일 파싱 실패: ${url}`, e);
+    return null;
+  }
 }
 
 async function loadCompressedFile(filename) {
