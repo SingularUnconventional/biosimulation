@@ -9,6 +9,8 @@ from itertools import product
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.append(PARENT_DIR)
 from src.entities.genome import Genome
+from src.utils.brain_constants import INPUT_INDICES, OUTPUT_INDICES
+from src.utils.math_utils import filter_reachable_loads
 
 # === 상수 설정 ===
 TILE_SIZE = 16
@@ -65,10 +67,12 @@ def paste_tile(canvas, sheet, x, y, w, h, hue_sat=None):
 
 # === 파츠 인덱스 매핑 ===
 def map_gene_to_parts(gene):
+    brain_synapses = filter_reachable_loads(INPUT_INDICES.keys(), OUTPUT_INDICES.keys(), gene['brain_synapses'])
+
     return {
         'body': min(int(max(math.log10(gene['size']*100-1), 0)), 6),
-        'xlegs': int((0 if gene['muscle_density']*gene['limb_length_factor'] == 0 else gene['muscle_density']) / 5.0 * 3.999 +0.5),
-        'ylegs': int((0 if gene['muscle_density']*gene['limb_length_factor'] == 0 else gene['limb_length_factor']) / 5.0 * 3.999 +0.5),
+        'xlegs': int((gene['muscle_density']     if brain_synapses else 0) / 5.0 * 3.999 +0.5),
+        'ylegs': int((gene['limb_length_factor'] if brain_synapses else 0) / 5.0 * 3.999 +0.5),
         'mouth': gene['food_intake'] if gene['food_intake'] < 4 else 4 + int(gene['attack_organ_power'] / 100 * 3.999),
         'tail': gene['reproductive_mode'],
         'eye_index': int(gene['visible_entities'] / 500 * 2.999),

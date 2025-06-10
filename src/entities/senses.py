@@ -11,16 +11,16 @@ def sense_environment(
     count: int,
     range_level: int,
     attention_creature: 'Creature',
-    active_senses: list[str],
+    active_senses: set[str],
     slot_map: dict[int, tuple[str, int | None]]
 ) -> dict:
 
     cpos = creature.position
     results = {}
     visual_creatures = [creature] #집중 개체의 인덱스를 확인하기 위해 생성한 특수 인자.
-
+    
     # === 1. food 감지 ===
-    if 'food' in active_senses:
+    if {'food_pos_x', 'food_pos_y'} & active_senses:
         min_dx, min_dy = 0, 0
         min_dist_sq = float('inf')
         for corpse in creature.grid.corpses:
@@ -34,7 +34,7 @@ def sense_environment(
         results['food_pos_y'] = [min_dy]
 
     # === 2. 시각 감지 ===
-    if 'visual' in active_senses:
+    if {'detected_pos_x', 'detected_pos_y', 'detected_size'} & active_senses:
         if range_level == 0:
             search_set = creature.grid.creatures
         else:
@@ -66,11 +66,11 @@ def sense_environment(
             results['detected_size'] = []
 
     # === 3. 청각 감지 ===
-    if 'audio' in active_senses:
+    if 'audio_heard' in active_senses:
         results['audio_heard'] = creature.grid.crying_sound[1]  # dict[int] or list[float]
 
     # === 4. 주의 감지 ===
-    if 'attention' in active_senses and attention_creature is not None:
+    if {'focus_pos_x', 'focus_pos_y', 'focus_size', 'focus_similarity', 'focus_diet_type', 'focus_health','focus_color_saturation', 'focus_color_hue', 'focus_hunger'} & active_senses and attention_creature is not None:
         results.update({
             'focus_pos_x': [attention_creature.position.x],
             'focus_pos_y': [attention_creature.position.y],

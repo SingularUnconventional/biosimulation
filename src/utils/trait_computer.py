@@ -71,13 +71,16 @@ def compute_biological_traits(genes:Genes) -> Traits:
     #군집 압력
     crowding_pressure = genes.size*CRUSH_DAMAGE_PER_SIZE
 
+    #적합 지형
+    preferred_altitude = 20-genes.preferred_altitude
+
     if genes.brain_synapses:
         #작동 뉴런 계산
         brain_synapses = filter_reachable_loads(INPUT_INDICES.keys(), OUTPUT_INDICES.keys(), genes.brain_synapses)
 
         if brain_synapses:
             arr = np.array(brain_synapses)
-            brain_max_nodeInx = int(np.max(arr[:, 0]))
+            brain_max_nodeInx = int(np.max(arr))
 
             #작동 입출력 뉴런
 
@@ -140,6 +143,7 @@ def compute_biological_traits(genes:Genes) -> Traits:
     traits.actual_intake			 = actual_intake
     traits.recovery_rate             = recovery_rate
     traits.crowding_pressure         = crowding_pressure
+    traits.preferred_altitude        = preferred_altitude
 
     
 

@@ -99,7 +99,7 @@ def filter_reachable_loads(startIndexs, endIndexs, loads):
     
     # 1. 그래프 구성 (양방향)
     graph = defaultdict(set)
-    for a, b, _, _ in loads:
+    for a, _, b, _ in loads:
         graph[a].add(b)
         graph[b].add(a)
 

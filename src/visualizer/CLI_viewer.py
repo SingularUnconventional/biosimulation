@@ -13,7 +13,7 @@ class Viewer:
         self.world = world
         self.count = 0
         self.start_time = time()
-        self.creature_count = 0
+        self.creature_count = 100
         self.running = True
         self.paused = False
         self.command = ""

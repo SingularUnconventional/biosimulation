@@ -6,12 +6,13 @@ canvas.height = window.innerHeight - 40;
 
 const CONFIG = {
   GRID_SIZE: 40,
-  ORGANIC_ENERGY_SCALE: 3000000000.0,
+  ORGANIC_ENERGY_SCALE: 10000000000.0,
   CREATURE_RADIUS: 1,
   FRAMES_PER_FILE: 100,
   LOG_DIR: "/logs/compressed/",
   CREATURE_SHEET_DIR: "/logs/creature_sheet.png",
   CREATURE_SIZE_DIR: "/logs/creature_sheet_size.jsonl",
+  TERRAIN_ALTITUDE_DIR: "/logs/terrain",
   MAX_CACHE_FILES: 4,
   PRELOAD_LOOKAHEAD: 3,
   GENE_FETCH_ZOOM_THRESHOLD: 2,
@@ -48,6 +49,21 @@ const CreatureSheetCache = {
   sizeArray: [],
   ready: false,
 };
+
+//  지형 고도별 색상 사전 정의
+const terrainColors = Array.from({ length: 21 }, (_, h) => {
+  if (h <= 7) return '#322be1';      // deepblue
+  if (h === 8) return '#3956e6';
+  if (h <= 9) return '#4169e1';      // blue
+  if (h === 10) return '#00bfff';     // lightblue
+  if (h <= 11) return '#eed6af';      // beach
+  if (h <= 12) return '#228b22';     // green
+  if (h <= 14) return '#006400';     // darkgreen
+  if (h <= 16) return '#8b8989';     // mountain
+  return '#fffafa';                  // snow
+});
+// 고도 데이터 전역 변수
+let terrainAltitude = [];
 
 // === 유틸 함수 ===
 const worldToScreen = (x, y) => ({ x: (x - state.cameraX) * state.zoom, y: (y - state.cameraY) * state.zoom });
@@ -151,13 +167,14 @@ function extractVisibleFromTurn(turnData) {
       const [organics, creatureList, corpsesList] = cell;
       visibleGrids.push({ x, y, organics });
 
-      for (const [id, cx, cy, hp, energy] of creatureList) {
+      for (const [id, cx, cy, hp, energy, brain_nodes] of creatureList) {
         creatures.push({
           id,
           x: cx,
           y: cy,
           hp,
-          energy
+          energy,
+          brain_nodes,
         });
       }
 
@@ -215,6 +232,7 @@ function updateInfoBox() {
     `<div class="info-row"><span class="label">HP</span><span class="value">${latest.hp.toFixed(2)}</span></div>`,
     `<div class="info-row"><span class="label">Energy</span><span class="value">${latest.energy.toFixed(4)}</span></div>`,
     `<div class="info-row"><span class="label">Position</span><span class="value">X: ${latest.x.toFixed(2)}<br>Y: ${latest.y.toFixed(2)}</span></div>`,
+    `<div class="info-row"><span class="label">Brain nodes</span><span class="value">${latest.brain_nodes.join(", ")}</span></div>`,
   ];
 
   if (state.selectedObjectData) {
@@ -251,9 +269,19 @@ function render() {
     const gx = x * CONFIG.GRID_SIZE;
     const gy = y * CONFIG.GRID_SIZE;
     const { x: sx, y: sy } = worldToScreen(gx, gy);
-    const energy = organics.reduce((a, b) => a + b, 0);
-    ctx.fillStyle = `rgba(254,255,192,${Math.min(energy / CONFIG.ORGANIC_ENERGY_SCALE, 1.0).toFixed(2)})`;
+
+    // 고도 기반 색상
+    const baseColor = terrainAltitude?.[y]?.[x] ?? 0;
+
+    // // 유기물 기반 알파값 계산
+    // const energy = organics.reduce((a, b) => a + b, 0);
+    // const alpha = Math.min(energy / CONFIG.ORGANIC_ENERGY_SCALE, 1.0).toFixed(2);
+
+    ctx.fillStyle = baseColor;
     ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
+
+    // ctx.fillStyle = `rgba(0,0,0,${alpha})`;  // 유기물 오버레이
+    // ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
   }
 
   for (const obj of state.visibleCorpses) {
@@ -452,6 +480,14 @@ canvas.addEventListener("touchend", e => {
   }
 });
 
+async function loadTerrainAltitude() {
+  const res = await fetch(CONFIG.TERRAIN_ALTITUDE_DIR);
+  const json = await res.json();
+  const raw = json.altitude;
+
+  terrainAltitude = raw.map(row => row.map(h => terrainColors[h]));
+}
+
 async function preloadCreatureSheetAndSize(sheetUrl=CONFIG.CREATURE_SHEET_DIR, sizeUrl=CONFIG.CREATURE_SIZE_DIR) {
   // 1. 이미지 로드
   const img = new Image();
@@ -482,6 +518,7 @@ async function detectTotalFrames() {
 }
 
 (async function start() {
+  await loadTerrainAltitude();
   await preloadCreatureSheetAndSize();
   await detectTotalFrames();
   const { filename, start, end } = findFileForFrame(state.currentFrame);

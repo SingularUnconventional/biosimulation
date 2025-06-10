@@ -134,6 +134,11 @@ def serve_zipped_creature_sheet():
     except Exception as e:
         abort_with_log(500, f"시트 압축 중 오류 발생: {e}")
 
+@app.route("/logs/terrain")
+def serve_altitude():
+    data = np.load(LOGS_DIR / "terrain_altitude.npy").tolist()
+    return jsonify({"altitude": data})
+
 @app.route('/logs/<path:filename>')
 def raw_logs(filename):
     return serve_file_safe(LOGS_DIR / filename)

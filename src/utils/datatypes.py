@@ -50,6 +50,7 @@ class Genes:
 	auditory_range 			: int			# 0 ~ 10			청각 감지 반경 (grid) 
 	visible_entities 		: int			# 0 ~ 500			감지 가능한 생물 수 
 	can_locate_closest_food : bool			# 0/1				가장 가까운 음식 인지 여부
+	preferred_altitude		: int			# 0 ~ 20			선호하는 고도.
 
 	brain_synapses 			: list[list]	# 					뇌 시냅스 리스트 
 	brain_compute_cycles 	: int			# 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
@@ -72,6 +73,7 @@ class Traits:
 	auditory_range 			: int			= None # 0 ~ 10				청각 감지 반경 (grid) 
 	visible_entities 		: int			= None # 0 ~ 500			감지 가능한 생물 수 
 	can_locate_closest_food : bool			= None # 0/1				가장 가까운 음식 인지 여부
+	preferred_altitude		: int			= None # 0 ~ 20				선호하는 고도.
 
 	brain_compute_cycles 	: int			= None # 0 ~ 1000			뇌 연산 수행 횟수 (턴당)	
 	

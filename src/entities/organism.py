@@ -122,6 +122,12 @@ class Creature:
                 creature.health -= self.traits.crowding_pressure
 
         #체력
+
+        # 선호 고도와 실제 지형 고도 차이에 따라 감소
+        if self.grid.terrain != self.traits.preferred_altitude:
+            delta = self.traits.preferred_altitude - self.grid.terrain
+            self.health -= ALTITUDE_HEALTH_DECAY*(delta ** 2)
+
         if self.traits.health > self.health:  
             self.health += self.traits.recovery_rate
             self.energy -= self.traits.recovery_rate

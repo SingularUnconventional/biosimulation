@@ -13,7 +13,14 @@ class World:
     def __init__(self):
         self.time = 0
 
-        self.solar_conversion_bonus = 5000
+        self.solar_conversion_bonus = 50000
+
+        terrain_noise = generate_noise_field(
+            shape=(WORLD_WIDTH_SCALE, WORLD_HIGHT_SCALE),
+            scale=WORLD_WIDTH_SCALE / 5,
+            seeds=np.random.randint(100)
+        )
+        terrain_noise = self.save_altitude_from_noise(terrain_noise)
 
         organics_noise = generate_noise_field(
             shape=(WORLD_WIDTH_SCALE, WORLD_HIGHT_SCALE),
@@ -22,7 +29,7 @@ class World:
         )
 
         self.world = [[
-            Grid(xGrid, yGrid, organics_noise[yGrid, xGrid])
+            Grid(xGrid, yGrid, terrain_noise[yGrid, xGrid], organics_noise[yGrid, xGrid])
             for xGrid in range(WORLD_WIDTH_SCALE)]
             for yGrid in range(WORLD_HIGHT_SCALE)
         ]
@@ -34,9 +41,18 @@ class World:
         for _ in range(CREATURES_SIZE):
             pos = Vector2(np.random.uniform(GRID_WIDTH_SCALE*WORLD_WIDTH_SCALE), np.random.uniform(GRID_HIGHT_SCALE*WORLD_HIGHT_SCALE))
             gridPos = get_grid_coords(pos)
-            creature = Creature(pos, np.random.randint(0, 256, 1500, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
+            creature = Creature(pos, np.random.randint(0, 256, 10000, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
             self.world[gridPos.y][gridPos.x].creatures.add(creature)
             self.logs.register_creature({creature})
+
+    
+    def save_altitude_from_noise(self, terrain_noise: np.ndarray, save_path: str = "logs/terrain_altitude.npy"):
+        """
+        [-1.0, 1.0] 범위의 노이즈를 0~20 사이의 정수 고도값으로 변환하여 저장
+        """
+        altitude = np.clip(((terrain_noise + 1) * 10), 0, 20).astype(np.uint8)  # 정수 변환
+        np.save(save_path, altitude)
+        return altitude
 
     def build_vision_refs(self, max_radius: int):
         """모든 Grid에 대해 시야 반경별 creatures 참조 리스트 생성"""
@@ -70,11 +86,13 @@ class World:
         self.time += 1
 
 class Grid:
-    def __init__(self, x: int, y: int, organic_affinity: list[float]):
+    def __init__(self, x: int, y: int, terrain_noise: int, organic_affinity: list[float]):
         self.pos = Vector2(x, y)
         self.creatures = set()
         self.corpses = set()
         self.vision_refs = []  # 시야 반경별 참조 리스트 초기화
+
+        self.terrain = terrain_noise
 
         self.organics = [((organic_affinity[i] + 1) * 0.5 * START_ORGANIC_RATES[i]) for i in range(NUM_ORGANIC)]
         # self.organics = OrganicMatterSource([

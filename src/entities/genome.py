@@ -21,14 +21,15 @@ class Genome:
         ('skin_thickness',              0, apply_weight_or_default,    (0.01,     0.1,      50, 0.01)),
         ('attack_organ_power',          0, apply_weight_or_default,    (0.4,      0.1,     100)),
         ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),
-        ('food_intake',                 0, apply_weight_or_default_int,(0.05,       0,       4)),
+        ('food_intake',                 0, apply_weight_or_default_int,(0.04,       0,       4)),
         ('intake_rates',                0, apply_weight_or_default,    (0.005,   0.05,       1)),
         ('digestive_efficiency',        0, apply_weight_or_default,    (0.005,    0.5,       1, 0.1)),
 
         ('visual_resolution',           0, apply_weight_or_default_int,(0.02,       0,       4)),
         ('auditory_range',              0, apply_weight_or_default_int,(0.025,      0,      10)),
-        ('visible_entities',            0, apply_weight_or_default,    (1,          0,     500)),
+        ('visible_entities',            0, apply_weight_or_default_int,(1,          0,     500)),
         ('can_locate_closest_food',     0, apply_weight_or_default_int,(0.005,      0,       1)),
+        ('preferred_altitude',          0, apply_weight_or_default_int,(0.1,       10,      20)),
 
         ('brain_synapses',              2, apply_weights_with_flag,   ((1,          0.1,     1), 
                                                                        (1000000,   10, 1000000), 
@@ -39,7 +40,7 @@ class Genome:
         ('crossover_cut_number',        0, apply_weight_or_default_int,(1,          3,     500)),
         ('mutation_intensity',          0, apply_weight_or_default,    (0.005,      0.5,     1)),
         ('reproductive_mode',           0, apply_weight_or_default_int,(0.005,      0,       1)),
-        ('calls',                       1, list_apply_weight_and_pad,  (0,          0,     999, CRY_VOLUME_SIZE)),#TODO IndexError 발생. 1000 -> 999 조정. 테스트 필요.
+        ('calls',                       1, list_apply_weight_and_pad,  (0,          0,     999, CRY_VOLUME_SIZE)),
         ('species_color_rgb',           1, list_apply_weight_and_pad,  (0.005,      0,       1, 6)),
         ('offspring_energy_share',      0, apply_weight_or_default,    (0.05,     0.3,     0.5)),
         ('offspring_count',             0, apply_weight_or_default_int,(0.01,       2,     100, 1)),
