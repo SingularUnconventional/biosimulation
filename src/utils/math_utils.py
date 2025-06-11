@@ -151,6 +151,7 @@ def find_creatures_within(creature_self:'Creature', creatures:list['Creature'], 
 
     return [others[i] for i in valid_indices]
 
+#TODO 특정 공간 안에 가장 가까운 개체.
 def find_nearest_creature(creature_self:'Creature', creatures: list['Creature']):
     """같은 grid 내에서 자신을 제외하고 가장 가까운 개체 하나를 반환"""
     others = [c for c in creatures if c is not creature_self]
