@@ -31,14 +31,14 @@ class _ActivationFunctions:
         e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
         return e_x / np.sum(e_x, axis=-1, keepdims=True)
 
-def brain_calculation(nodes : list[list], synapses : list[list]):
+def brain_calculation(nodes : np.ndarray, synapses : list[list]):
     result = nodes.copy()
     for cns in synapses:
         if result[int(cns[0])][1]:
-            if cns[3]: result[int(cns[2])][2] += result[int(cns[0])][1]*cns[1]
-            else:      result[int(cns[2])][0] += result[int(cns[0])][1]*cns[1]*THRESHOLD_WEIGHT
+            if cns[3]: result[int(cns[2]), 2] += result[int(cns[0]), 1]*cns[1]*THRESHOLD_WEIGHT
+            else:      result[int(cns[2]), 0] += result[int(cns[0]), 1]*cns[1]
 
-    result[:, 1] = _ActivationFunctions.leaky_relu(result[:, 0])
+    result[:, 1] = _ActivationFunctions.sigmoid(result[:, 0]+result[:, 2])
     result[:, 0] = 0
 
     return result

@@ -10,7 +10,7 @@ from src.entities.actions   import actions_environment
 from src.utils.constants    import *
 from src.utils.datatypes    import Color, Vector2, Genes, Traits
 from src.utils.trait_computer import compute_biological_traits
-from src.utils.math_utils   import find_closest_point, get_grid_coords, find_creatures_within, find_nearest_creature, gene_similarity, find_nearest_corpse
+from src.utils.math_utils   import find_closest_point, get_grid_coords, find_creatures_within, find_nearest_creature, gene_similarity, find_nearest_object
 
 import numpy as np
 
@@ -68,7 +68,7 @@ class Creature:
             for i in range(CRY_VOLUME_SIZE):
                 if not self.cry_volume[i]:
                     continue
-                
+                self.grid.crying_sound_set.add(i)
                 self.grid.crying_sound[0][self.traits.calls[i]] += 1
 
             InputNodes, visual_creatures = sense_environment(
@@ -97,7 +97,7 @@ class Creature:
                     self.energy     += self.traits.actual_intake * self.world.solar_conversion_bonus
                     self.grid.organics[self.traits.food_intake]  -= self.traits.intake_rates * self.world.solar_conversion_bonus
             elif self.traits.food_intake == 4: #사체 섭취
-                corpse = find_nearest_corpse(self, self.grid.corpses, self.traits.size)
+                corpse = find_nearest_object(self.position, self.grid.corpses, self.traits.size)
                 if corpse:
                     corpse.energy -= self.traits.actual_intake
                     self.energy += self.traits.actual_intake
@@ -141,7 +141,7 @@ class Creature:
         if self.reproduce_intent: # 의지가 있을 때
             if self.traits.reproductive_mode: # 유성생식
                 if self.energy > self.traits.all_initial_offspring_energy: # 에너지 충분
-                    breed_creatures = find_nearest_creature(self, attack_creatures, self.traits.size)
+                    breed_creatures = find_nearest_object(self.position, attack_creatures, self.traits.size)
                     if breed_creatures and self.get_species_similarity(breed_creatures) > 0.9: # 상대 있음, 종 유사도 0.9 초과
                         if self.energy > self.traits.all_initial_offspring_energy: # 상대 에너지 충분
                             return self.mate_breed(breed_creatures)

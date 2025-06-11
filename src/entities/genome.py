@@ -15,44 +15,47 @@ class Genome:
     # 1 - 리스트 값 (누적 또는 추가)
     # 2 - 중첩 리스트 값 (복잡한 구조 표현)
     GENE_DEFINITIONS = [
-        ('size',                        0, apply_weight_or_default,    (0.1,      0.1,  100000, 0.1)),
-        ('limb_length_factor',          0, apply_weight_or_default,    (0.02,       0,       5)),
-        ('muscle_density',              0, apply_weight_or_default,    (0.02,       0,       5)),
-        ('skin_thickness',              0, apply_weight_or_default,    (0.01,     0.1,      50, 0.01)),
-        ('attack_organ_power',          0, apply_weight_or_default,    (0.4,      0.1,     100)),
-        ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),
-        ('food_intake',                 0, apply_weight_or_default_int,(0.04,       0,       4)),
-        ('intake_rates',                0, apply_weight_or_default,    (0.01,   0.05,       1)),
-        ('digestive_efficiency',        0, apply_weight_or_default,    (0.01,     0.5,       1, 0.1)),
+        (3, 'size',                        0, apply_weight_or_default,     (0.005, 0.1, 100000, 0.1)),
+        (2, 'limb_length_factor',          0, apply_weight_or_default,     (0.0015, 0, 5)),
+        (2, 'muscle_density',              0, apply_weight_or_default,     (0.0015, 0, 5)),
+        (2, 'skin_thickness',              0, apply_weight_or_default,     (0.001, 0.1, 50, 0.01)),
+        (2, 'attack_organ_power',          0, apply_weight_or_default,     (0.02, 0.1, 100)),
+        (1, 'retaliation_damage_ratio',    0, apply_weight_or_default,     (0.002, 1, 5)),
+        (2, 'food_intake',                 0, apply_weight_or_default_int, (0.0015, 0, 4)),
+        (1, 'intake_rates',                0, apply_weight_or_default,     (0.001, 0.05, 1)),
+        (1, 'digestive_efficiency',        0, apply_weight_or_default,     (0.001, 0.5, 1, 0.1)),
 
-        ('visual_resolution',           0, apply_weight_or_default_int,(0.02,       0,       4)),
-        ('auditory_range',              0, apply_weight_or_default_int,(0.025,      0,      10)),
-        ('visible_entities',            0, apply_weight_or_default_int,(1,          0,     500)),
-        ('can_locate_closest_food',     0, apply_weight_or_default_int,(0.005,      0,       1)),
-        ('preferred_altitude',          0, apply_weight_or_default_int,(0.1,       10,      20)),
+        (2, 'visual_resolution',           0, apply_weight_or_default_int, (0.002, 0, 4)),
+        (1, 'auditory_range',              0, apply_weight_or_default_int, (0.005, 0, 4)),
+        (1, 'visible_entities',            0, apply_weight_or_default_int, (0.05, 0, 500)),
+        (1, 'can_locate_closest_food',     0, apply_weight_or_default_int, (0.001, 0, 1)),
+        (2, 'preferred_altitude',          0, apply_weight_or_default_int, (0.005, 10, 20)),
 
-        ('brain_synapses',              2, apply_weights_with_flag,   ((1,          0.1,     1), 
-                                                                       (1000000,   10, 1000000), 
-                                                                       (0,         -5,       0))),
+        (95, 'brain_synapses',             2, apply_weights_with_flag,     ((1, 0.1, 1), (1000000, 10, 1000000), (0, -5, 0))),
 
-        ('brain_compute_cycles',        0, apply_weight_or_default_int,(0.1,        1,    1000)),
-        
-        ('crossover_cut_number',        0, apply_weight_or_default_int,(1,          3,     500)),
-        ('mutation_intensity',          0, apply_weight_or_default,    (0.005,      0.5,     1)),
-        ('reproductive_mode',           0, apply_weight_or_default_int,(0.01,      0,       1)),
-        ('calls',                       1, list_apply_weight_and_pad,  (0,          0,     999, CRY_VOLUME_SIZE)),
-        ('species_color_rgb',           1, list_apply_weight_and_pad,  (0.005,      0,       1, 6)),
-        ('offspring_energy_share',      0, apply_weight_or_default,    (0.05,     0.3,     0.5)),
-        ('offspring_count',             0, apply_weight_or_default_int,(0.01,       2,     100, 1)),
-    ]# *20 # 속성 반복 (확장용)
+        (1, 'brain_compute_cycles',        0, apply_weight_or_default_int, (0.01, 1, 1000)),
+        (2, 'crossover_cut_number',        0, apply_weight_or_default_int, (0.05, 3, 500)),
+        (1, 'mutation_intensity',          0, apply_weight_or_default,     (0.0002, 0.5, 1)),
+        (1, 'reproductive_mode',           0, apply_weight_or_default_int, (0.001, 0, 1)),
+        (2, 'calls',                       1, list_apply_weight_and_pad,   (1, 0, 999, CRY_VOLUME_SIZE)),
+        (1, 'species_color_rgb',           1, list_apply_weight_and_pad,   (0.005, 0, 1, 6)),
+        (1, 'offspring_energy_share',      0, apply_weight_or_default,     (0.002, 0.3, 0.5)),
+        (1, 'offspring_count',             0, apply_weight_or_default_int, (0.0005, 2, 100, 1)),
+    ]
+
+    attribute_name_list = [
+        (name, fmt)
+        for repeat, name, fmt, *_  in GENE_DEFINITIONS
+        for _ in range(repeat)
+    ]
 
     def __init__(self, genome_bytes_bytes: bytes):
         self.genome_bytes = genome_bytes_bytes  # 유전자 시퀀스 (바이트열)
         # 속성 초기화: 형식에 따라 0 또는 빈 리스트
-        self.attributes = {name : 0 if fmt == 0 else [] for name, fmt, _,_ in self.GENE_DEFINITIONS}
+        self.attributes = {name : 0 if fmt == 0 else [] for _, name, fmt, *_ in self.GENE_DEFINITIONS}
         self.traits = None
         # 초기 선택 속성
-        self.current_attr_index, self.data_format, _,_ = self.GENE_DEFINITIONS[0]
+        self.current_attr_index, self.data_format = self.attribute_name_list[0]
         self.parse_genome_bytes()
         self.finalize_attributes()
 
@@ -60,7 +63,7 @@ class Genome:
         """최종적인 속성 정규화"""
         self.traits = Genes(*(
             genome_bytes_function(self.attributes[name],*index) 
-            for name, _, genome_bytes_function, index in self.GENE_DEFINITIONS
+            for _, name, _, genome_bytes_function, index in self.GENE_DEFINITIONS
         ))
 
     def parse_genome_bytes(self):
@@ -76,9 +79,7 @@ class Genome:
 
     def _set_current_attribute(self, index):
         """속성 전환 명령 처리"""
-        if index >= len(self.GENE_DEFINITIONS):
-            index %= len(self.GENE_DEFINITIONS)
-        self.current_attr_index, self.data_format, _,_ = self.GENE_DEFINITIONS[index]
+        self.current_attr_index, self.data_format = self.attribute_name_list[index]
         attr = self.attributes[self.current_attr_index]
 
         # 포맷 1: 리스트일 경우 새로운 항목 초기화
@@ -94,7 +95,7 @@ class Genome:
 
         if self.data_format == 0:
             # 평균 방식으로 단일 값 누적
-            self.attributes[self.current_attr_index] = (attr + data) / 2
+            self.attributes[self.current_attr_index] = attr + data
 
         elif self.data_format == 1:
             # 리스트 마지막 항목에 누적하거나 새로 추가

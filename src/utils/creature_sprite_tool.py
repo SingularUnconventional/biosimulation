@@ -9,7 +9,7 @@ from itertools import product
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.append(PARENT_DIR)
 from src.entities.genome import Genome
-from src.utils.brain_constants import INPUT_INDICES, OUTPUT_INDICES
+from src.utils.brain_constants import GENE_INDEX, INPUT_INDICES, OUTPUT_INDICES
 from src.utils.math_utils import filter_reachable_loads
 
 # === 상수 설정 ===
@@ -68,14 +68,15 @@ def paste_tile(canvas, sheet, x, y, w, h, hue_sat=None):
 # === 파츠 인덱스 매핑 ===
 def map_gene_to_parts(gene):
     brain_synapses = filter_reachable_loads(INPUT_INDICES.keys(), OUTPUT_INDICES.keys(), gene['brain_synapses'])
+    is_can_move = any(row[2] == GENE_INDEX['move_speed_out'] for row in brain_synapses)
 
     return {
-        'body': min(int(max(math.log10(gene['size']*100-1), 0)), 6),
-        'xlegs': int((gene['muscle_density']     if brain_synapses else 0) / 5.0 * 3.999 +0.5),
-        'ylegs': int((gene['limb_length_factor'] if brain_synapses else 0) / 5.0 * 3.999 +0.5),
+        'body': min(int(max(math.log(gene['size'], 2), 0)), 6),
+        'xlegs': int((gene['muscle_density']     if is_can_move else 0) / 5.0 * 3.999 +0.5),
+        'ylegs': int((gene['limb_length_factor'] if is_can_move else 0) / 5.0 * 3.999 +0.5),
         'mouth': gene['food_intake'] if gene['food_intake'] < 4 else 4 + int(gene['attack_organ_power'] / 100 * 3.999),
         'tail': gene['reproductive_mode'],
-        'eye_index': int(gene['visible_entities'] / 500 * 2.999),
+        'eye_index':  min(int(gene['visible_entities'] / 100 * 3), 3),
         'eye_y': min(gene['visual_resolution'], 4),
         'antenna': int(gene['auditory_range'] / 10 * 5.999),
     }

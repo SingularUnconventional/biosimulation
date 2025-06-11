@@ -69,6 +69,7 @@ class WorldLog:
                 [  # each row
                     [  # each grid: [organics, creatures]
                         [self.fast_round_scalar(v) for v in grid.organics],  # [float]
+                        list(grid.crying_sound_set), #[int]
                         [  # creatures
                             [  # each creature: [id, x, y, health, energy]
                                 creature.id,

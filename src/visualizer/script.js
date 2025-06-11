@@ -4,6 +4,11 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight - 40;
 
+// === 전역: 오디오 초기화 ===
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioBufferQueue = [];
+let audioIsPlaying = false;
+
 const CONFIG = {
   GRID_SIZE: 40,
   ORGANIC_ENERGY_SCALE: 10000000000.0,
@@ -166,8 +171,8 @@ function extractVisibleFromTurn(turnData) {
     for (let x = minX; x <= maxX; x++) {
       const cell = grids[y][x];
       if (!cell) continue;
-      const [organics, creatureList, corpsesList] = cell;
-      visibleGrids.push({ x, y, organics });
+      const [organics, sound,creatureList, corpsesList] = cell;
+      visibleGrids.push({ x, y, organics, sound });
 
       for (const [id, cx, cy, hp, energy, brain_nodes] of creatureList) {
         creatures.push({
@@ -247,6 +252,24 @@ function updateInfoBox() {
   sidebar.innerHTML = lines.join("\n");
 }
 
+function playFrequencies(freqList) {
+  const now = audioContext.currentTime;
+
+  for (const freq of freqList) {
+    const osc = audioContext.createOscillator();
+    osc.frequency.setValueAtTime(freq, now);
+    osc.type = 'sine';
+
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(0.0005, now); // 초기 볼륨
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.01); // 부드럽게 사라짐
+
+    osc.connect(gain).connect(audioContext.destination);
+    osc.start(now);
+    osc.stop(now + 0.1); // 0.5초 후 자동 제거
+  }
+}
+
 // === 렌더링 ===
 function render() {
   const frameIndex = state.currentFrame - state.currentFileRange.start;
@@ -267,7 +290,9 @@ function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
 
-  for (const { x, y, organics } of state.visibleGrids) {
+  const allFrequencies = [];
+
+  for (const { x, y, organics, sound } of state.visibleGrids) {
     const gx = x * CONFIG.GRID_SIZE;
     const gy = y * CONFIG.GRID_SIZE;
     const { x: sx, y: sy } = worldToScreen(gx, gy);
@@ -284,6 +309,17 @@ function render() {
 
     // ctx.fillStyle = `rgba(0,0,0,${alpha})`;  // 유기물 오버레이
     // ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
+
+    for (const freq of sound) {
+      allFrequencies.push((freq+10)**2);
+    }
+  }
+
+  // 중복 제거, 너무 많은 주파수 제한
+  if (allFrequencies.length > 0) {
+    const uniqueFreqs = [...new Set(allFrequencies)];
+    //const selectedFreqs = uniqueFreqs.slice(0, 10); // 과도한 동시 재생 방지
+    playFrequencies(uniqueFreqs);
   }
 
   for (const obj of state.visibleCorpses) {

@@ -36,6 +36,8 @@ def sense_environment(
     # === 2. 시각 감지 ===
     if {'detected_pos_x', 'detected_pos_y', 'detected_size'} & active_senses:
         if range_level == 0:
+            search_set = set()
+        elif range_level == 1:
             search_set = creature.grid.creatures
         else:
             search_set = creature.grid.vision_refs[range_level - 1]

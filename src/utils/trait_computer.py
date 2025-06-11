@@ -94,7 +94,7 @@ def compute_biological_traits(genes:Genes) -> Traits:
             }
             brain_output_synapses = {
                 key: OUTPUT_INDICES[key]
-                for key in map(int, arr[:, 0])
+                for key in map(int, arr[:, 2])
                 if key in output_keys_set
             }
 

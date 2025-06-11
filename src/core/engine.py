@@ -56,12 +56,13 @@ class World:
         
         self.logs = WorldLog(self.world)
 
-        self.build_vision_refs(max_radius=3)  # 시야 반경 1~3까지 지원
+        self.build_vision_refs(max_radius=4)  # 시야 반경 1~4까지 지원
 
         for _ in range(CREATURES_SIZE):
-            pos = Vector2(np.random.uniform(GRID_WIDTH_SCALE*WORLD_WIDTH_SCALE), np.random.uniform(GRID_HIGHT_SCALE*WORLD_HIGHT_SCALE))
+            pos = Vector2(np.random.uniform(GRID_WIDTH_SCALE*2, GRID_WIDTH_SCALE*(WORLD_WIDTH_SCALE+2)), 
+                          np.random.uniform(GRID_HIGHT_SCALE*2, GRID_HIGHT_SCALE*(WORLD_HIGHT_SCALE+2)))
             gridPos = get_grid_coords(pos)
-            creature = Creature(pos, np.random.randint(0, 256, 10000, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
+            creature = Creature(pos, np.random.randint(0, 256, 3000, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
             self.world[gridPos.y][gridPos.x].creatures.add(creature)
             self.logs.register_creature({creature})
 
@@ -110,7 +111,7 @@ class Grid:
         self.pos = Vector2(x, y)
         self.creatures = set()
         self.corpses = set()
-        self.vision_refs = [[] for _ in range(3)]  # 시야 반경별 참조 리스트 초기화
+        self.vision_refs = [[] for _ in range(4)]  # 시야 반경별 참조 리스트 초기화
 
         self.terrain = terrain_noise
 
@@ -122,12 +123,14 @@ class Grid:
         # ])
 
         self.crying_sound = [[0 for _ in range(1000)] for _ in range(2)]
+        self.crying_sound_set = set()
 
     def turn(self):
         self.crying_sound[1] = self.crying_sound[0] #말하기 채널 값을 듣기 채널로 이동.
         self.crying_sound[0] = [0]*1000             #말하기 채널 초기화.
         
     def process_creatures(self, world: World):
+        self.crying_sound_set = set()
         creature_spawn_queue = set()
         creature_remove_queue = set()
         corpse_remove_queue = set()
@@ -165,7 +168,6 @@ class Grid:
             self.corpses.discard(corpse)
 
         for offspring in creature_spawn_queue:
-            offspring.move() #TODO 공간 벗어남 문제 임시 해결. x추가 후 삭제.
             c = get_grid_coords(offspring.position)
             world.world[c.y][c.x].creatures.add(offspring)
             offspring.grid = world.world[c.y][c.x]

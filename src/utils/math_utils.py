@@ -7,6 +7,7 @@ import numpy as np
 from src.utils.constants import *
 from src.utils.datatypes import Vector2
 
+from typing import List
 from collections import defaultdict, deque
 
 def find_closest_point_arg(points: np.array, target: np.array) -> int:
@@ -70,65 +71,37 @@ def intersect_lists(list1, list2):
     """두 리스트의 공통 요소를 순서 없이 반환"""
     return list(set(list1) & set(list2))
 
-def filter_reachable_loads(startIndexs, endIndexs, loads):
+def filter_reachable_loads(start_nodes: List[int], target_nodes: List[int], edges: List[List[int]]) -> List[List[int]]:
     """
-    주어진 무방향 그래프에서 시작 노드 집합으로부터 도착 노드 집합에
-    도달 가능한 모든 경로 상의 간선(edge)만 필터링하여 반환합니다.
-
-    이 함수는 그래프 G = (V, E)에서, 시작 정점들의 집합 S ⊆ V 와
-    도착 정점들의 집합 T ⊆ V 가 주어졌을 때, S 에서 출발하여 T 에 도달 가능한
-    경로에 포함된 간선만을 추출합니다. 그 외의 연결되지 않은 간선은 제거됩니다.
-
-    Parameters:
-    ----------
-    start_nodes : List[int]
-        시작 정점들의 집합 S
-    
-    target_nodes : List[int]
-        도착 정점들의 집합 T
-
-    edges : List[List[int]]
-        무방향 간선의 리스트. 각 간선은 [u, x, v, x] 형태로 정의되며, u ≠ v 일 수 있습니다.
-        자기 루프 [u, x, u, x] 도 허용됩니다.
-
-    Returns:
-    -------
-    List[List[int]]
-        S 로부터 T 까지 도달 가능한 경로들에 포함된 간선만 반환된 리스트.
+    방향성 있는 간선들 중, start_nodes로부터 target_nodes까지 도달 가능한 경로에 포함된 간선만 반환.
+    간선은 [u, i, v, j] 형식 (u → v) 으로 주어짐.
     """
-    
-    # 1. 그래프 구성 (양방향)
-    graph = defaultdict(set)
-    for a, _, b, _ in loads:
-        graph[a].add(b)
-        graph[b].add(a)
+    # 1. 방향성 있는 그래프 구성
+    graph = defaultdict(list)
+    for u, _, v, _ in edges:
+        graph[u].append(v)
 
-    # 2. 출발점에서 모든 가능한 경로 탐색 (BFS)
-    paths = []
+    # 2. 도달 가능한 노드 집합 계산 (BFS)
     visited = set()
-    queue = deque()
-
-    for start in startIndexs:
-        queue.append((start, [start]))
-        visited.add(start)
-
-    valid_nodes = set()
+    reachable = set()
+    queue = deque(start_nodes)
 
     while queue:
-        node, path = queue.popleft()
-
-        if node in endIndexs:
-            valid_nodes.update(path)
+        node = queue.popleft()
+        if node in visited:
             continue
-
+        visited.add(node)
+        if node in target_nodes:
+            reachable.add(node)
         for neighbor in graph[node]:
-            if neighbor not in path:  # 사이클 방지
-                queue.append((neighbor, path + [neighbor]))
+            if neighbor not in visited:
+                queue.append(neighbor)
 
-    # 3. 경로에 포함된 노드만 유지
+    # 3. 간선 필터링: 도달 경로에 있는 간선만 유지 (u → v 형태)
     result = [
-        [a, i, b, t] for a, i, b, t in loads
-        if a in valid_nodes and b in valid_nodes
+        [u, i, v, j]
+        for u, i, v, j in edges
+        if u in visited and v in visited  # u → v가 방문된 경로 내에 있는 경우
     ]
 
     return result
@@ -152,14 +125,14 @@ def find_creatures_within(creature_self:'Creature', creatures:list['Creature'], 
     return [others[i] for i in valid_indices]
 
 #TODO 특정 공간 안에 가장 가까운 개체.
-def find_nearest_creature(creature_self:'Creature', creatures: list['Creature']):
+def find_nearest_creature(creature_self:'Creature', creatures: list['Creature'], max_distance: float):
     """같은 grid 내에서 자신을 제외하고 가장 가까운 개체 하나를 반환"""
     others = [c for c in creatures if c is not creature_self]
     if not others:
         return None
 
     self_pos = np.array([creature_self.position.x, creature_self.position.y])
-    min_dist_sq = float('inf')
+    min_dist_sq = max_distance * max_distance
     nearest = None
 
     for c in others:
@@ -191,6 +164,37 @@ def find_nearest_corpse(creature_self: 'Creature', corpses: list['Corpse'], max_
         if dist_sq < min_dist_sq and dist_sq <= max_dist_sq:
             min_dist_sq = dist_sq
             nearest = c
+
+    return nearest
+
+def find_nearest_object(
+    origin_pos: Vector2,
+    objects: list,
+    max_distance: float,
+    exclude_object=None
+):
+    """
+    주어진 위치(origin_pos)에서 max_distance 이내 가장 가까운 개체를 반환
+    :param origin_pos: 기준 위치 (x, y)
+    :param objects: 거리 비교 대상 객체 리스트
+    :param max_distance: 최대 거리
+    :param exclude_object: 제외할 객체 (ex: 자기 자신)
+    :return: 가장 가까운 객체 또는 None
+    """
+    max_dist_sq = max_distance ** 2
+    min_dist_sq = float('inf')
+    nearest = None
+
+    for obj in objects:
+        if obj is exclude_object:
+            continue
+        dx = obj.position.x - origin_pos.x
+        dy = obj.position.y - origin_pos.y
+        dist_sq = dx * dx + dy * dy
+
+        if dist_sq <= max_dist_sq and dist_sq < min_dist_sq:
+            min_dist_sq = dist_sq
+            nearest = obj
 
     return nearest
 
