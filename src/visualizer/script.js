@@ -13,8 +13,8 @@ const CONFIG = {
   CREATURE_SHEET_DIR: "/logs/creature_sheet.png",
   CREATURE_SIZE_DIR: "/logs/creature_sheet_size.jsonl",
   TERRAIN_ALTITUDE_DIR: "/logs/terrain",
-  MAX_CACHE_FILES: 4,
-  PRELOAD_LOOKAHEAD: 3,
+  MAX_CACHE_FILES: 9,
+  PRELOAD_LOOKAHEAD: 8,
   GENE_FETCH_ZOOM_THRESHOLD: 2,
   GENE_CACHE_LIMIT: 10000,
 };
@@ -51,7 +51,7 @@ const CreatureSheetCache = {
 };
 
 //  지형 고도별 색상 사전 정의
-const terrainColors = Array.from({ length: 21 }, (_, h) => {
+const terrainColors = Array.from({ length: 65536 }, (_, h) => {
   if (h <= 7) return '#322be1';      // deepblue
   if (h === 8) return '#3956e6';
   if (h <= 9) return '#4169e1';      // blue
@@ -60,7 +60,9 @@ const terrainColors = Array.from({ length: 21 }, (_, h) => {
   if (h <= 12) return '#228b22';     // green
   if (h <= 14) return '#006400';     // darkgreen
   if (h <= 16) return '#8b8989';     // mountain
-  return '#fffafa';                  // snow
+  if (h <= 21) return '#fffafa';     // snow
+  if(h <= 1000) return '#d6605c';
+  return '#3d110f';
 });
 // 고도 데이터 전역 변수
 let terrainAltitude = [];

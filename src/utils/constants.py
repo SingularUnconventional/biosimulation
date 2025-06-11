@@ -3,8 +3,8 @@
 GRID_WIDTH_SCALE   = 40
 GRID_HIGHT_SCALE   = 40
 
-WORLD_WIDTH_SCALE   = 100
-WORLD_HIGHT_SCALE   = 100
+WORLD_WIDTH_SCALE   = 10
+WORLD_HIGHT_SCALE   = 10
 
 CREATURES_SIZE      = 100
 
@@ -40,6 +40,7 @@ VISUAL_RESOLUTION_ENERGY_COST   = 0.03	    # 시각 해상도당 에너지 비�
 AUDITORY_RANGE_ENERGY_COST      = 0.03		# 청각 반경당 에너지 비용
 VISIBLE_ENTITY_ENERGY_COST      = 0.02		# 감지 가능한 생물 수당 비용
 FOOD_LOCATION_ENERGY_COST       = 0.05		# 음식 위치 감지 여부에 따른 비용
+THRESHOLD_WEIGHT                = 0.001     # 역치 가중인자
 
 # 신체활동
 LIMB_LENGTH_ENERGY_COST         = 20		# 팔다리 길이에 따른 비용
@@ -56,12 +57,12 @@ ATTACK_COST_RATIO               = 0.007
 SPEED_COST_RATIO                = 0.007
 SPEED_BASE                      = 0.05
 SPEED_MASS_INFLUENCE            = 0.4
-LIFESPAN_SCALE                  = 5000.0
+LIFESPAN_SCALE                  = 20000.0
 
 # 에너지 저장
 ENERGY_RESERVE_MUSCLE_MULTIPLIER= 0.5      # 근밀도가 에너지 저장량에 미치는 영향
 ENERGY_RESERVE_SKIN_MULTIPLIER  = 0.1      # 피부 두께가 에너지 저장량에 미치는 영향
-ENERGY_RESERVE_MULTIPLIER       = 10000   # 전체적인 에너지 저장량
+ENERGY_RESERVE_MULTIPLIER       = 100000   # 전체적인 에너지 저장량
 
 
 CRUSH_DAMAGE_PER_SIZE = 100  # 압사 데미지 계수

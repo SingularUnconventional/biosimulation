@@ -1,4 +1,5 @@
 import numpy as np
+from src.utils.constants import THRESHOLD_WEIGHT
 
 class _ActivationFunctions:
     @staticmethod
@@ -35,13 +36,13 @@ def brain_calculation(nodes : list[list], synapses : list[list]):
     for cns in synapses:
         if result[int(cns[0])][1]:
             if cns[3]: result[int(cns[2])][2] += result[int(cns[0])][1]*cns[1]
-            else:      result[int(cns[2])][0] += result[int(cns[0])][1]*cns[1]
+            else:      result[int(cns[2])][0] += result[int(cns[0])][1]*cns[1]*THRESHOLD_WEIGHT
 
     result[:, 1] = _ActivationFunctions.leaky_relu(result[:, 0])
     result[:, 0] = 0
 
     return result
-
+# TODO 역치 한계값 조정 필요 -> 오버플로우 발생. 대안 1. 가중값에 역치를 나눠 역치가 커질수록 가중값이 작아지도록 설정.
 if __name__ == '__main__':
     import time
 

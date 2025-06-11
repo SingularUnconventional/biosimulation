@@ -22,8 +22,8 @@ class Genome:
         ('attack_organ_power',          0, apply_weight_or_default,    (0.4,      0.1,     100)),
         ('retaliation_damage_ratio',    0, apply_weight_or_default,    (0.02,       1,       5)),
         ('food_intake',                 0, apply_weight_or_default_int,(0.04,       0,       4)),
-        ('intake_rates',                0, apply_weight_or_default,    (0.005,   0.05,       1)),
-        ('digestive_efficiency',        0, apply_weight_or_default,    (0.005,    0.5,       1, 0.1)),
+        ('intake_rates',                0, apply_weight_or_default,    (0.01,   0.05,       1)),
+        ('digestive_efficiency',        0, apply_weight_or_default,    (0.01,     0.5,       1, 0.1)),
 
         ('visual_resolution',           0, apply_weight_or_default_int,(0.02,       0,       4)),
         ('auditory_range',              0, apply_weight_or_default_int,(0.025,      0,      10)),

@@ -47,8 +47,8 @@ class Viewer:
         # 100턴마다 개체 수 갱신
         if self.count % 100 == 0:
             creature_set = set()
-            for y in range(WORLD_HIGHT_SCALE):
-                for x in range(WORLD_WIDTH_SCALE):
+            for y in range(WORLD_HIGHT_SCALE+4):
+                for x in range(WORLD_WIDTH_SCALE+4):
                     creature_set.update(self.world.world[y][x].creatures)
             self.creature_count = len(creature_set)
 

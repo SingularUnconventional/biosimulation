@@ -158,12 +158,6 @@ class Creature:
         new_position = Vector2(self.move_dir_x, self.move_dir_y)*self.traits.speed*self.move_speed + self.position
         self.energy -= self.move_speed * self.traits.move_cost
     
-        if (new_position.x < 0 or 
-            new_position.y < 0 or 
-            new_position.x >= WORLD_WIDTH_SCALE*GRID_WIDTH_SCALE or 
-            new_position.y >= WORLD_HIGHT_SCALE*GRID_HIGHT_SCALE): #TODO 임시. 차후 테두리는 생존 불가능 구역으로 설정하여 문제 해결.
-            new_position = Vector2(WORLD_WIDTH_SCALE*GRID_WIDTH_SCALE/2, WORLD_HIGHT_SCALE*GRID_HIGHT_SCALE/2)
-            
         self.position = new_position
         new_grid = get_grid_coords(self.position)
         
@@ -220,8 +214,8 @@ class Creature:
         if other in self._similarity_cache:
             return self._similarity_cache[other]
         
-        self_gene_str = self.genome.genome_bytes('utf-8', errors='ignore')
-        other_gene_str = other.genome.genome_bytes('utf-8', errors='ignore')
+        self_gene_str = self.genome.genome_bytes.decode('utf-8', errors='ignore')
+        other_gene_str = other.genome.genome_bytes.decode('utf-8', errors='ignore')
 
         sim = gene_similarity(self_gene_str, other_gene_str)
         self._similarity_cache[other] = sim

@@ -88,8 +88,8 @@ def filter_reachable_loads(startIndexs, endIndexs, loads):
         도착 정점들의 집합 T
 
     edges : List[List[int]]
-        무방향 간선의 리스트. 각 간선은 [u, v] 형태로 정의되며, u ≠ v 일 수 있습니다.
-        자기 루프 [u, u] 도 허용됩니다.
+        무방향 간선의 리스트. 각 간선은 [u, x, v, x] 형태로 정의되며, u ≠ v 일 수 있습니다.
+        자기 루프 [u, x, u, x] 도 허용됩니다.
 
     Returns:
     -------
@@ -127,7 +127,7 @@ def filter_reachable_loads(startIndexs, endIndexs, loads):
 
     # 3. 경로에 포함된 노드만 유지
     result = [
-        [a, b, i, t] for a, b, i, t in loads
+        [a, i, b, t] for a, i, b, t in loads
         if a in valid_nodes and b in valid_nodes
     ]
 
