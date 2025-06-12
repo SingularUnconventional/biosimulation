@@ -27,43 +27,43 @@ def compute_biological_traits(genes:Genes) -> Traits:
         attack_bonus + food_intake_penalty
     )
 
-    BMR = BASAL_METABOLIC_CONSTANT * (genes.size ** BASAL_METABOLIC_EXPONENT) * total_bmr_multiplier
+    BMR = int(BASAL_METABOLIC_CONSTANT * (genes.size ** BASAL_METABOLIC_EXPONENT) * total_bmr_multiplier)
 
 
     # 체력 계산
-    health              = BASE_HEALTH + (SIZE_HEALTH_MULTIPLIER * genes.size) + (SKIN_HEALTH_MULTIPLIER * genes.skin_thickness)
+    health              = BASE_HEALTH + (SIZE_HEALTH_MULTIPLIER * genes.size) + int(SKIN_HEALTH_MULTIPLIER * genes.skin_thickness)
 
     # 전투 계산
-    attack_power        = (genes.muscle_density + genes.attack_organ_power) * genes.size
-    attack_cost         = BMR * ATTACK_COST_RATIO * attack_power
-    attack_range        = (genes.limb_length_factor*ATTACK_RANGE_LIMB_RATIO+1) * genes.size
+    attack_power        = int((genes.muscle_density + genes.attack_organ_power) * genes.size)
+    attack_cost         = int(BMR * ATTACK_COST_RATIO * attack_power)
+    attack_range        = int((genes.limb_length_factor*ATTACK_RANGE_LIMB_RATIO+1) * genes.size)
     
-    retaliation_damage  = genes.size * genes.retaliation_damage_ratio
+    retaliation_damage  = int(genes.size * genes.retaliation_damage_ratio)
 
     # 이동 속도 계산
-    speed               = SPEED_BASE * genes.limb_length_factor * ((genes.muscle_density / genes.size) ** SPEED_MASS_INFLUENCE)
-    move_cost           = BMR * SPEED_COST_RATIO * speed
+    speed               = int(SPEED_BASE * genes.limb_length_factor * ((genes.muscle_density / genes.size) ** SPEED_MASS_INFLUENCE))
+    move_cost           = int(BMR * SPEED_COST_RATIO * speed)
 
     # 수명 계산
     lifespan            = LIFESPAN_SCALE * (genes.size / BMR)
 
     # 에너지 저장량 계산
-    energy_reserve = genes.size * (
+    energy_reserve = genes.size * int(
         1 +
         genes.muscle_density * ENERGY_RESERVE_MUSCLE_MULTIPLIER +
         genes.skin_thickness * ENERGY_RESERVE_SKIN_MULTIPLIER
     ) * ENERGY_RESERVE_MULTIPLIER
 
-    all_initial_offspring_energy = energy_reserve * genes.offspring_energy_share
+    all_initial_offspring_energy = int(energy_reserve * genes.offspring_energy_share)
 
     # 자식에게 줄 초기 에너지 계산
-    initial_offspring_energy = all_initial_offspring_energy / genes.offspring_count
+    initial_offspring_energy = int(all_initial_offspring_energy / genes.offspring_count)
 
     # 시간당 에너지 섭취량 계산
-    intake_rates = genes.intake_rates * genes.size * ENERGY_INTAKE_RATES[genes.food_intake]
+    intake_rates = int(genes.intake_rates * genes.size * ENERGY_INTAKE_RATES[genes.food_intake])
 
     #실제 에너지 섭취량
-    actual_intake = intake_rates * genes.digestive_efficiency
+    actual_intake = int(intake_rates * genes.digestive_efficiency)
 
     #체력 회복량 계산
     recovery_rate = BMR * RECOVERY_RATE

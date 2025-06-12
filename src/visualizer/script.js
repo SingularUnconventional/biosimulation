@@ -10,7 +10,7 @@ let audioBufferQueue = [];
 let audioIsPlaying = false;
 
 const CONFIG = {
-  GRID_SIZE: 40,
+  GRID_SIZE: 4000,
   ORGANIC_ENERGY_SCALE: 10000000000.0,
   CREATURE_RADIUS: 1,
   FRAMES_PER_FILE: 100,
@@ -20,12 +20,12 @@ const CONFIG = {
   TERRAIN_ALTITUDE_DIR: "/logs/terrain",
   MAX_CACHE_FILES: 9,
   PRELOAD_LOOKAHEAD: 8,
-  GENE_FETCH_ZOOM_THRESHOLD: 2,
+  GENE_FETCH_ZOOM_THRESHOLD: 0.01,
   GENE_CACHE_LIMIT: 10000,
 };
 
 const state = {
-  cameraX: 0, cameraY: 0, zoom: 1,
+  cameraX: 0, cameraY: 0, zoom: 10/CONFIG.GRID_SIZE,
   isPlaying: true, isDragging: false, isTouching: false,
   lastMouse: { x: 0, y: 0 }, lastTouch: [], lastDist: null,
   tapStartPos: null, tapStartTime: 0,
@@ -171,17 +171,16 @@ function extractVisibleFromTurn(turnData) {
     for (let x = minX; x <= maxX; x++) {
       const cell = grids[y][x];
       if (!cell) continue;
-      const [organics, sound,creatureList, corpsesList] = cell;
-      visibleGrids.push({ x, y, organics, sound });
+      const [sound,creatureList, corpsesList] = cell;
+      visibleGrids.push({ x, y, sound });
 
-      for (const [id, cx, cy, hp, energy, brain_nodes] of creatureList) {
+      for (const [id, cx, cy, hp, energy] of creatureList) {
         creatures.push({
           id,
           x: cx,
           y: cy,
           hp,
           energy,
-          brain_nodes,
         });
       }
 
@@ -219,9 +218,11 @@ function extractCreatureByIndex(index, tileSize = 16) {
 function handleObjectSelection(screenX, screenY) {
   const world = screenToWorld(screenX, screenY);
   state.selectedObject = state.visibleCreatures.find(obj => Math.hypot(obj.x - world.x, obj.y - world.y) < CreatureSheetCache.sizeArray[obj.id]/2);
-  fetchGeneInfo(state.selectedObject.id).then(data => {
-    state.selectedObjectData = data;
-  });
+  if(state.selectedObject){
+    fetchGeneInfo(state.selectedObject.id).then(data => {
+      state.selectedObjectData = data;
+    });
+  }
   // updateInfoBox();
   // console.debug(`${found}`)
   // console.debug(`${state.selectedObject}`)
@@ -236,10 +237,9 @@ function updateInfoBox() {
 
   const lines = [
     `<div class="info-header">Creature #${latest.id}</div>`,
-    `<div class="info-row"><span class="label">HP</span><span class="value">${latest.hp.toFixed(2)}</span></div>`,
-    `<div class="info-row"><span class="label">Energy</span><span class="value">${latest.energy.toFixed(4)}</span></div>`,
-    `<div class="info-row"><span class="label">Position</span><span class="value">X: ${latest.x.toFixed(2)}<br>Y: ${latest.y.toFixed(2)}</span></div>`,
-    `<div class="info-row"><span class="label">Brain nodes</span><span class="value">${latest.brain_nodes.join(", ")}</span></div>`,
+    `<div class="info-row"><span class="label">HP</span><span class="value">${latest.hp}</span></div>`,
+    `<div class="info-row"><span class="label">Energy</span><span class="value">${latest.energy}</span></div>`,
+    `<div class="info-row"><span class="label">Position</span><span class="value">X: ${latest.x}<br>Y: ${latest.y}</span></div>`,
   ];
 
   if (state.selectedObjectData) {
@@ -292,7 +292,7 @@ function render() {
 
   const allFrequencies = [];
 
-  for (const { x, y, organics, sound } of state.visibleGrids) {
+  for (const { x, y, sound } of state.visibleGrids) {
     const gx = x * CONFIG.GRID_SIZE;
     const gy = y * CONFIG.GRID_SIZE;
     const { x: sx, y: sy } = worldToScreen(gx, gy);
@@ -300,15 +300,8 @@ function render() {
     // 고도 기반 색상
     const baseColor = terrainAltitude?.[y]?.[x] ?? 0;
 
-    // // 유기물 기반 알파값 계산
-    // const energy = organics.reduce((a, b) => a + b, 0);
-    // const alpha = Math.min(energy / CONFIG.ORGANIC_ENERGY_SCALE, 1.0).toFixed(2);
-
     ctx.fillStyle = baseColor;
     ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
-
-    // ctx.fillStyle = `rgba(0,0,0,${alpha})`;  // 유기물 오버레이
-    // ctx.fillRect(sx, sy, CONFIG.GRID_SIZE * state.zoom, CONFIG.GRID_SIZE * state.zoom);
 
     for (const freq of sound) {
       allFrequencies.push((freq+10)**2);
@@ -529,12 +522,18 @@ async function loadTerrainAltitude() {
 async function preloadCreatureSheetAndSize(sheetUrl=CONFIG.CREATURE_SHEET_DIR, sizeUrl=CONFIG.CREATURE_SIZE_DIR) {
   // 1. 이미지 로드
   const img = new Image();
+  img.crossOrigin = "anonymous"; // CORS 대응용, 필요시
   const imageLoaded = new Promise((resolve, reject) => {
     img.onload = resolve;
     img.onerror = reject;
   });
   img.src = sheetUrl;
-  await imageLoaded;
+
+  try {
+    await imageLoaded;
+  } catch (e) {
+    console.error("이미지 로딩 실패:", sheetUrl, e);
+  }
 
   CreatureSheetCache.sheetImage = img;
 

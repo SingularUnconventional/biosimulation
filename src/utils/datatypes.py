@@ -28,6 +28,9 @@ class Vector2:
 	def __mul__(self, other):
 		return Vector2(self.x*other, self.y*other)
 	
+	def toInt(self) -> 'Vector2':
+		return Vector2(int(self.x), int(self.y))
+	
 	def distance_sq(self, other: 'Vector2') -> int:
 		dx = self.x - other.x
 		dy = self.y - other.y
@@ -60,12 +63,12 @@ class Genes:
 	reproductive_mode 		: bool			# 					생식 방식 (0: 무성, 1: 유성)
 	calls 					: list[int]		# 					울음소리 리스트
 	species_color_rgb 		: list[int]		# 					종 유사도 표현 색상 (r, g, b)
-	offspring_energy_share 	: int			# 0.0 ~ 0.5			자식에게 전해줄 초기 에너지 비율 
+	offspring_energy_share 	: float			# 0.0 ~ 0.5			자식에게 전해줄 초기 에너지 비율 
 	offspring_count 		: int			# 1 ~ 100			한 번에 낳는 자식 수 
 
 @dataclass
 class Traits:
-	size 					: float			= None # 0.01 ~ 100,000.0	신체 크기 (kg)
+	size 					: int			= None # 0.01 ~ 100,000.0	신체 크기 (kg)
 	food_intake				: int			= None # 0 ~ 4				섭취 가능 음식
 	digestive_efficiency 	: float			= None # 0.1 ~ 1.0			섭취 에너지 변환율
 
@@ -84,22 +87,22 @@ class Traits:
 	species_color_rgb 		: list[int]		= None # 					종 유사도 표현 색상 (r, g, b)
 	offspring_count 		: int			= None # 1 ~ 100			한 번에 낳는 자식 수 
 
-	BMR						: float			= None
-	health					: float			= None
+	BMR						: int			= None
+	health					: int			= None
 	attack_range			: float			= None
-	attack_power			: float			= None
-	attack_cost				: float			= None
-	move_cost				: float			= None
-	retaliation_damage		: float			= None
-	speed					: float			= None
+	attack_power			: int			= None
+	attack_cost				: int			= None
+	move_cost				: int			= None
+	retaliation_damage		: int			= None
+	speed					: int			= None
 	lifespan				: float			= None
-	energy_reserve			: float			= None
-	all_initial_offspring_energy:float		= None
-	initial_offspring_energy: float			= None
-	intake_rates 			: float			= None	# 0.0 ~ 10000.0		시간당 음식 섭취량     
-	actual_intake			: float			= None
-	recovery_rate			: float			= None
-	crowding_pressure		: float			= None
+	energy_reserve			: int			= None
+	all_initial_offspring_energy:int		= None
+	initial_offspring_energy: int			= None
+	intake_rates 			: int			= None	# 0.0 ~ 10000.0		시간당 음식 섭취량     
+	actual_intake			: int			= None
+	recovery_rate			: int			= None
+	crowding_pressure		: int			= None
 	brain_synapses 			: list[list]	= None # 					뇌 시냅스 리스트 
 	brain_max_nodeInx		: int			= None
 	brain_input_synapses	: list[int]   	= None

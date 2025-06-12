@@ -1,7 +1,7 @@
 #프로젝트 전반에서 사용하는 상수를 정의
 
-GRID_WIDTH_SCALE   = 40
-GRID_HIGHT_SCALE   = 40
+GRID_WIDTH_SCALE   = 4000
+GRID_HIGHT_SCALE   = 4000
 
 WORLD_WIDTH_SCALE   = 100
 WORLD_HIGHT_SCALE   = 100
@@ -20,7 +20,7 @@ START_ORGANIC_RATES  = [1_000_000_000, 1_000_000_000, 1_000_000_000, 1_000_000_0
 #ORGANIC_MAX_AMOUNT  = [250, 500, 750, 1000]
 
 ENERGY_INTAKE_RATES = [0.01, 20, 20, 20, 200]
-DECAY_RETURN_ENERGY = [8, 8, 8, 8]
+DECAY_RETURN_ENERGY = [80, 80, 80, 80]
 
 #지형에 따른 부식률 노이즈 생성.
 
@@ -49,13 +49,13 @@ SKIN_THICKNESS_ENERGY_COST      = 0.1	    # 피부 두께에 따른 비용
 ATTACK_ORGAN_ENERGY_COST        = 0.015	    # 공격 기관 파괴력에 따른 비용
 
 # 체력, 공격, 속도, 수명
-BASE_HEALTH                     = 1000.0
-SIZE_HEALTH_MULTIPLIER          = 2000.0
-SKIN_HEALTH_MULTIPLIER          = 1000.0
+BASE_HEALTH                     = 1000
+SIZE_HEALTH_MULTIPLIER          = 2000
+SKIN_HEALTH_MULTIPLIER          = 1000
 ATTACK_RANGE_LIMB_RATIO         = 0.1
 ATTACK_COST_RATIO               = 0.007
-SPEED_COST_RATIO                = 0.007
-SPEED_BASE                      = 0.05
+SPEED_COST_RATIO                = 0.00007
+SPEED_BASE                      = 50
 SPEED_MASS_INFLUENCE            = 0.4
 LIFESPAN_SCALE                  = 20000.0
 
@@ -68,4 +68,4 @@ ENERGY_RESERVE_MULTIPLIER       = 30000   # 전체적인 에너지 저장량
 CRUSH_DAMAGE_PER_SIZE = 100  # 압사 데미지 계수
 CRY_VOLUME_SIZE = 10 #한 개체가 낼 수 있는 소리 한계
 RECOVERY_RATE = 1 #회복계수
-ALTITUDE_HEALTH_DECAY = 2  # 고도 불일치 기본 감쇠율
+ALTITUDE_HEALTH_DECAY = 0.1  # 고도 불일치 기본 감쇠율

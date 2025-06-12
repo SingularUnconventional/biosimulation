@@ -68,23 +68,21 @@ class WorldLog:
             [  # grids
                 [  # each row
                     [  # each grid: [organics, creatures]
-                        [self.fast_round_scalar(v) for v in grid.organics],  # [float]
                         list(grid.crying_sound_set), #[int]
                         [  # creatures
                             [  # each creature: [id, x, y, health, energy]
                                 creature.id,
-                                self.fast_round_scalar(creature.position.x),
-                                self.fast_round_scalar(creature.position.y),
-                                self.fast_round_scalar(creature.health),
-                                self.fast_round_scalar(creature.energy),
-                                self.fast_round_array(creature.brain_nodes).tolist()
+                                creature.position.x,
+                                creature.position.y,
+                                creature.health,
+                                creature.energy,
                             ] for creature in grid.creatures
                         ],
                         [   #corpses
                             [  # each creature: [x, y, energy]
-                                self.fast_round_scalar(corpse.position.x),
-                                self.fast_round_scalar(corpse.position.y),
-                                self.fast_round_scalar(corpse.energy)
+                                corpse.position.x,
+                                corpse.position.y,
+                                corpse.energy
                             ] for corpse in grid.corpses
                         ]
                     ] for grid in row

@@ -31,7 +31,7 @@ class Creature:
         self.world          : 'World'   = world
         self.grid           : 'Grid'    = grid
         self.position       : Vector2   = position
-        self.health         : float     = self.traits.health
+        self.health         : int       = self.traits.health
         self.energy         : float     = self.traits.initial_offspring_energy
         self.life_start_time: int       = world.time
         if self.traits.brain_max_nodeInx:
@@ -126,7 +126,7 @@ class Creature:
         # 선호 고도와 실제 지형 고도 차이에 따라 감소
         if self.grid.terrain != self.traits.preferred_altitude:
             delta = self.traits.preferred_altitude - self.grid.terrain
-            self.health -= ALTITUDE_HEALTH_DECAY*(delta ** 2)
+            self.health -= int(ALTITUDE_HEALTH_DECAY*(delta ** 2)*self.traits.size)
 
         if self.traits.health > self.health:  
             self.health += self.traits.recovery_rate
@@ -155,10 +155,9 @@ class Creature:
         
 
     def move(self):
-        new_position = Vector2(self.move_dir_x, self.move_dir_y)*self.traits.speed*self.move_speed + self.position
+        self.position += (Vector2(self.move_dir_x, self.move_dir_y)*self.traits.speed*self.move_speed).toInt()
         self.energy -= self.move_speed * self.traits.move_cost
-    
-        self.position = new_position
+
         new_grid = get_grid_coords(self.position)
         
         if self.grid.pos != new_grid:
@@ -186,7 +185,7 @@ class Creature:
                 self.position+Vector2(
                 np.cos(theta := np.random.uniform(0, 2 * np.pi)) * self.traits.size,
                 np.sin(theta) * self.traits.size
-            ), 
+            ).toInt(), 
                 self.genome.apply_mutation(list(self.genome.genome_bytes), self.traits.mutation_intensity), 
                 self.world, 
                 self.grid,
@@ -227,7 +226,7 @@ class Corpse:
     def __init__(self, grid, position, energy):
         self.grid       : 'Grid'    = grid
         self.position    : Vector2  = position
-        self.energy      : float    = energy
+        self.energy      : int      = energy
 
     def decay(self):
         for i in range(NUM_ORGANIC):

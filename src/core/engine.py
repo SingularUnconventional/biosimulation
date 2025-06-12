@@ -59,8 +59,8 @@ class World:
         self.build_vision_refs(max_radius=4)  # 시야 반경 1~4까지 지원
 
         for _ in range(CREATURES_SIZE):
-            pos = Vector2(np.random.uniform(GRID_WIDTH_SCALE*2, GRID_WIDTH_SCALE*(WORLD_WIDTH_SCALE+2)), 
-                          np.random.uniform(GRID_HIGHT_SCALE*2, GRID_HIGHT_SCALE*(WORLD_HIGHT_SCALE+2)))
+            pos = Vector2(np.random.randint(GRID_WIDTH_SCALE*2, GRID_WIDTH_SCALE*(WORLD_WIDTH_SCALE+2)), 
+                          np.random.randint(GRID_HIGHT_SCALE*2, GRID_HIGHT_SCALE*(WORLD_HIGHT_SCALE+2)))
             gridPos = get_grid_coords(pos)
             creature = Creature(pos, np.random.randint(0, 256, 3000, dtype=np.uint8).tobytes(), self, self.world[gridPos.y][gridPos.x], 0)
             self.world[gridPos.y][gridPos.x].creatures.add(creature)

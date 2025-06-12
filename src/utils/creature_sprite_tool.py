@@ -71,7 +71,7 @@ def map_gene_to_parts(gene):
     is_can_move = any(row[2] == GENE_INDEX['move_speed_out'] for row in brain_synapses)
 
     return {
-        'body': min(int(max(math.log(gene['size'], 2), 0)), 6),
+        'body': min(int(max(math.log(gene['size']/100, 2), 0)), 6),
         'xlegs': int((gene['muscle_density']     if is_can_move else 0) / 5.0 * 3.999 +0.5),
         'ylegs': int((gene['limb_length_factor'] if is_can_move else 0) / 5.0 * 3.999 +0.5),
         'mouth': gene['food_intake'] if gene['food_intake'] < 4 else 4 + int(gene['attack_organ_power'] / 100 * 3.999),
